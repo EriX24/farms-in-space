@@ -1,0 +1,21 @@
+{
+  "id": "default:po-compressed-energy-leaves",
+
+  "blueprint": "po-compressed-energy-leaves",
+
+  "input": {
+    "compressed-energy-leaves": 1
+  },
+
+  "output": [
+    {
+      "items": {
+        "pale-air": [10, 20],
+        "pale-argon": [10, 20]
+      },
+      "weight": 1
+    }
+  ],
+
+  "time": [295000, 305000]
+}

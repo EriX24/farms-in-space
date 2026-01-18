@@ -1,0 +1,11 @@
+{
+  "id": "default:default-environment",
+
+  "blueprint": "default-environment",
+
+  "input": {
+
+  },
+
+  "environment": "default"
+}

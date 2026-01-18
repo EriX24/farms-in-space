@@ -1,0 +1,27 @@
+{
+  "id": "default:purified-lightbulb-fern-orb",
+
+  "blueprint": "l-b-f-o-purified-lightbulb-fern-orb",
+
+  "input": {
+    "lightbulb-fern-orb": 1
+  },
+
+    "output": [
+      {
+        "items": {
+          "purified-lightbulb-fern-orb": 1
+        },
+        "weight": 8
+      },
+      {
+        "items": {
+          "pale-argon": [5, 10],
+          "pale-air": [5, 10]
+        },
+        "weight": 2
+      }
+  ],
+
+  "time": [4000, 6000]
+}
