@@ -42,7 +42,7 @@ class Farm:
 
     def update(self, player, pressed_keys, pickup_ready, dispenser):
         for plant in self.plants:
-            plant.update(player, pressed_keys, pickup_ready, self, dispenser)
+            plant.update(player, pressed_keys, pickup_ready, self, dispenser)  # TODO: Follow the trail
 
         if not self.effects_added:
             self.add_effects()

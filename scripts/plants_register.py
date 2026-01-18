@@ -136,48 +136,19 @@ class PaleBushPlant(Plant):
     @pale_moss_synergy
     def update(self, player, pressed_keys, pickup_ready, farm: Farm, dispenser):
         # Grow the bush
-        item_list__ = list(dispenser.stored_items)
-        item_list__.sort()
-        print(dispenser.stored_items[item_list__[dispenser.current_item]], "item")
-
         self.generate_cooldown = self.cooldowns[1]
         self.grow()
 
         self.generate_leaf_progress += clock.get_time()
 
-        item_list__ = list(dispenser.stored_items)
-        item_list__.sort()
-        print(dispenser.stored_items[item_list__[dispenser.current_item]], "item-pls no")
-
-        if not dispenser.stored_items.get("energy-leaf"):
-            item_list = list(dispenser.stored_items.keys())
-            item_list.sort()
-
-            current_item = item_list[dispenser.current_item]
+        if not dispenser.stored_items.get("energy-leaf"):  # TODO: You are the problem, this is the core of my suffering
             dispenser.stored_items["energy-leaf"] = 0
-
-            item_list = list(dispenser.stored_items.keys())
-            item_list.sort()
-
-            dispenser.current_item = item_list.index(current_item)
-
-        item_list__ = list(dispenser.stored_items)
-        item_list__.sort()
-        print(dispenser.stored_items[item_list__[dispenser.current_item]], "item")
 
         if self.generate_cooldown <= 0:
             self.generate_cooldown = 1
 
-        item_list__ = list(dispenser.stored_items)
-        item_list__.sort()
-        print(dispenser.stored_items[item_list__[dispenser.current_item]], "item")
-
         for _ in range(int(self.generate_leaf_progress // self.generate_cooldown)):
             dispenser.stored_items["energy-leaf"] += 1
-
-        item_list__ = list(dispenser.stored_items)
-        item_list__.sort()
-        print(dispenser.stored_items[item_list__[dispenser.current_item]], "item")
 
         # 160.19 is the width
 
@@ -191,10 +162,6 @@ class PaleBushPlant(Plant):
         self.cooldown_constants = [self.GROW_COOLDOWN_CONST, self.GENERATE_COOLDOWN_CONST]
 
         self.generate_leaf_progress %= self.generate_cooldown
-
-        item_list__ = list(dispenser.stored_items)
-        item_list__.sort()
-        print(dispenser.stored_items[item_list__[dispenser.current_item]], "item-pls no")
 
     @staticmethod
     def evaluate_output(farm: Farm):
