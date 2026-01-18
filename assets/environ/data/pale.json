@@ -1,0 +1,12 @@
+{
+  "id": "default:pale-environment",
+
+  "blueprint": "pale-environment",
+
+  "input": {
+    "pale-air": 0.02,
+    "pale-argon": 0.02
+  },
+
+  "environment": "pale"
+}

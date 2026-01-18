@@ -1,0 +1,20 @@
+{
+  "id": "default:compress-energy-leaves",
+
+  "blueprint": "compressed-energy-leaves",
+
+  "input": {
+    "energy-leaf": 10
+  },
+
+    "output": [
+    {
+      "items": {
+        "compressed-energy-leaves": 1
+      },
+      "weight": 1
+    }
+  ],
+
+  "time": [4000, 6000]
+}
