@@ -149,8 +149,17 @@ class PaleBushPlant(Plant):
         item_list__.sort()
         print(dispenser.stored_items[item_list__[dispenser.current_item]], "item-pls no")
 
-        if not dispenser.stored_items.get("energy-leaf"):  # TODO: You are the problem, this is the core of my suffering
+        if not dispenser.stored_items.get("energy-leaf"):
+            item_list = list(dispenser.stored_items.keys())
+            item_list.sort()
+
+            current_item = item_list[dispenser.current_item]
             dispenser.stored_items["energy-leaf"] = 0
+
+            item_list = list(dispenser.stored_items.keys())
+            item_list.sort()
+
+            dispenser.current_item = item_list.index(current_item)
 
         item_list__ = list(dispenser.stored_items)
         item_list__.sort()
