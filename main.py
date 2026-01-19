@@ -1176,7 +1176,7 @@ class Farms:
                     for plant_ in farm_object.plants:
                         plant_.evaluate_input(farm_object)
         for farm_ in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
-            farm_.update(player, pressed_keys, j_ready, dispenser)  # TODO: Root of the problem
+            farm_.update(player, pressed_keys, j_ready, dispenser)
 
         # TODO: Fix this
 
@@ -1540,7 +1540,7 @@ while True:
         # Update
         dispenser.update()
         generator.update()
-        farms.update()  # TODO: Figure out why farms.update is making me suffer in the vivisection pit (it dealigns the item when planting pale bushes)
+        farms.update()
         player.update(pressed_keys)
 
         # Items

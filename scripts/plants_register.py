@@ -141,8 +141,19 @@ class PaleBushPlant(Plant):
 
         self.generate_leaf_progress += clock.get_time()
 
-        if not dispenser.stored_items.get("energy-leaf"):  # TODO: You are the problem, this is the core of my suffering
+        if not dispenser.stored_items.get("energy-leaf"):
+            item_list = list(dispenser.stored_items.keys())
+            item_list.sort()
+
+            current_item = item_list[dispenser.current_item]
+
             dispenser.stored_items["energy-leaf"] = 0
+
+            item_list = list(dispenser.stored_items.keys())
+            item_list.sort()
+
+            dispenser.current_item = item_list.index(current_item)
+
 
         if self.generate_cooldown <= 0:
             self.generate_cooldown = 1
