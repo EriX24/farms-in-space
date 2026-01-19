@@ -350,7 +350,7 @@ class Dispenser:
     def switch_entry(self, entry):
         self.entry = entry
         self.history.append(entry)
-        print(self.entry)
+        # print(self.entry)
 
     def screen_blit(self):
         """Blit what's on the screen"""
@@ -719,7 +719,6 @@ class Dispenser:
                             break
 
                     if enough_materials:
-                        print("OK")
                         self.frame_lit_ticks = self.frame_lit_duration
 
                         for item_required in item_recipe["input"]:
@@ -803,7 +802,6 @@ class Dispenser:
                         new_plant = new_plant_class(current_farm.x + random.randint(0, 196) // 4 * 4,
                                                     current_farm.environment)
 
-                        print("item2")
                         current_farm.add_plant(new_plant)
 
                 item_list_ = list(self.stored_items)
@@ -1094,7 +1092,6 @@ class Farms:
         self.progress += clock.get_time()
 
         if self.progress:
-            print(self.progress)
             for _ in range(int(self.progress // FARM_UPDATE_TICKS)):
                 for farm_object in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
                     environment_req = \
@@ -1697,8 +1694,7 @@ while True:
 
     item_list_ = list(dispenser.stored_items)
     item_list_.sort()
-    print(dispenser.stored_items[item_list_[dispenser.current_item]], "item")
-    print("------------------------------------")
+    # print("------------------------------------") # Re-enable this if there are multiple prints to separate ticks
 
     # print(clock.get_fps())
     # print(dispenser.fabricating_items)

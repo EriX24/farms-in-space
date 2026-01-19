@@ -103,7 +103,6 @@ class PaleClouds:
 
     def blit(self, farm):
         # 224, 248
-        print(farm.x)
         self.rect.left = farm.x + 4
         self.rect.bottom = 464
 
@@ -270,8 +269,6 @@ class Grass:
     def update(self, player, pressed_keys, pickup_ready, farm):
         farm.effects.remove(self)
         farm.effects.append(self)
-
-        print(self.layer_1 == [], self.layer_1b == [], self.layer_2 == [], self.layer_3 == [])
 
         self.update_progress += clock.get_time()
 
@@ -517,7 +514,6 @@ class Grass:
                 self.layer_1b[pixel_idx] = [random_pixel[0], random.randint(2, 3)]
 
         if self.layer_1b_opacity >= 255 and not self.layer_2:
-            print("layer_2_creation", self.layer_2)
             # Layer 2 creation
             for _ in range(15):
                 loc_choice = random.choice(self.filled_layer)

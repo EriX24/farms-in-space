@@ -78,8 +78,6 @@ def pale_moss_synergy(func):
             if type(entry) == PaleMoss:
                 time_reduction_percent += entry.flowers
 
-        print(time_reduction_percent, "reduction")
-
         for i in range(len(self.cooldowns)):
             self.cooldowns[i] = self.cooldown_constants[i] - self.cooldown_constants[i] * (time_reduction_percent / 100)
 
@@ -554,7 +552,6 @@ class PaleMoss(Plant):
     name = "pale-moss"
 
     def __init__(self, x, environment: str):
-        print("pale mossing")
         super().__init__(x, environment)
         self.image = FarmAssets.blank_canvas.copy()
         self.flower_image = FarmAssets.blank_canvas.copy()
