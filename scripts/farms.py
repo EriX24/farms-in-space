@@ -1,4 +1,3 @@
-# TODO: Make each farm into its own object
 from scripts.assets import FarmAssets
 from scripts.environment_effects import EffectsLoadingManager, effects, Grass
 from scripts.logger import log_error

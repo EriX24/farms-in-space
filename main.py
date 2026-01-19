@@ -1,4 +1,3 @@
-# TODO: investigate why the pale bush item is shifted on the first use
 import copy
 import ctypes
 import math
@@ -1136,8 +1135,6 @@ class Farms:
                                             required_item - farm_object.environment_items.get(
                                         req_item, 0))
 
-                            # TODO: Further testing is needed to confirm that the "environment sustained" code works
-
                             # Check how many resources is needed from the storage and weather the environment is already sustained/self-sustaining
                             if farm_object.environment_items.get(req_item):
                                 farm_object.environment_items[req_item] += (
@@ -1175,7 +1172,8 @@ class Farms:
         for farm_ in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
             farm_.update(player, pressed_keys, j_ready, dispenser)
 
-        # TODO: Fix this
+        # TODO: Fix this [???]
+        # Fix what
 
         self.progress %= FARM_UPDATE_TICKS
 
@@ -1668,7 +1666,7 @@ while True:
         l_ready = True
 
     if pressed_keys[pygame.K_f] or True:
-        # TODO: finish
+        # TODO: finish [???]
         # Finish what
         fps = str(int(clock.get_fps()))
         for i in range(len(fps)):

@@ -174,7 +174,6 @@ register_effect("default:dirt", Dirt)
 # Default environment grass
 class Grass:
     def __init__(self):
-        # TODO: Find a way for the grass to be already laid out when play is pressed
         self.layer_1_opacity = 0
         self.layer_1b_opacity = 0
         self.layer_2_opacity = 0

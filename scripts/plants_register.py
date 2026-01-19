@@ -530,7 +530,6 @@ class LightBulbFern(Plant):
         for branch_idx in range(len(self.branch_positions)):
             self.branch_positions[branch_idx][1] += 4
 
-            # TODO: Make the branches decay better
             if self.branch_positions[branch_idx][1] > 200 - (
                     abs((self.stem_x + 2) - self.branch_positions[branch_idx][0]) - 2):
                 self.branch_positions[branch_idx] = ""
