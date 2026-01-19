@@ -633,11 +633,10 @@ class PaleMoss(Plant):
         pass
 
     def evaluate_input(self, farm: Farm, ):
-        pass
-        # if len(farm.plants) >= 2 and farm.environment == "pale":
-        #     pass
-        # else:
-        #     farm.plants.remove(self)
+        if len(farm.plants) >= 2 and farm.environment == "pale":
+            pass
+        else:
+            farm.plants.remove(self)
 
     def grow(self):
         if self.right_growing:
