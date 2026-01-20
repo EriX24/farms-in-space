@@ -70,11 +70,13 @@ register_effect("default:pale-dirt", PaleEnvironmentDirt)
 # Pale Environment Mist
 class PaleEnvironmentBackground:
     def __init__(self):
-        pass
+        self.opacity = 0
 
-    @staticmethod
-    def blit(farm):
-        screens["centered_display"].blit(FarmAssets.pale_environment_overlay, (farm.x, 248))
+    def blit(self, farm):
+        overlay = FarmAssets.pale_environment_overlay.copy()
+        overlay.set_alpha((80 / 255) * self.opacity)
+
+        screens["centered_display"].blit(overlay, (farm.x, 248))
 
     def update(self, player, pressed_keys, pickup_ready, farm):
         count = 0
@@ -82,7 +84,16 @@ class PaleEnvironmentBackground:
             if type(effect) == type(self):
                 count += 1
 
-        if count > 1 or farm.environment != "pale":
+        if count > 1 and self.opacity <= 0:  # Prevent it from being spammed
+            farm.effects.remove(self)
+
+        if farm.environment == "pale":  # Add opacity if the environment matches
+            if self.opacity < 255: self.opacity += 3
+        else:
+            if self.opacity > 0: self.opacity -= 3
+
+        # Remove the effect if it's invisible and the environment isn't 'pale'
+        if self.opacity <= 0 and farm.environment != "pale":
             farm.effects.remove(self)
 
 
