@@ -189,7 +189,7 @@ class Dispenser:
 
         # Items
         self.stored_items = {"pale-air": 50, "pale-argon": 50, "pale-moss-swathe": 6,
-                             "light-bulb-fern-seed": 5, "pale-bush-seed": 5, "energy-leaf": 0}
+                             "light-bulb-fern-seed": 5, "pale-bush-seed": 5, "simple-recharger": 1}
 
         # Items being fabricated
         self.fabricating_items = []

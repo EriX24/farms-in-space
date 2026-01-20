@@ -50,6 +50,8 @@ class ItemAssets:
         os.path.join("assets", "items", "lightbulb-fern-orb.png")).convert_alpha()
     purified_lightbulb_fern_orb = pygame.image.load(
         os.path.join("assets", "items", "purified-lightbulb-fern-orb.png")).convert_alpha()
+    recharger = pygame.image.load(os.path.join("assets", "items", "recharger.png")).convert_alpha()
+    depleted_recharger = pygame.image.load(os.path.join("assets", "items", "depleted-recharger.png")).convert_alpha()
 
     # Plant assets
     pale_moss_swathe = pygame.image.load(

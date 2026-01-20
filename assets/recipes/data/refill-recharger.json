@@ -1,0 +1,21 @@
+{
+  "id": "default:refill-recharger",
+
+  "blueprint": "refill-recharger",
+
+  "input": {
+    "depleted-recharger": 1,
+    "purified-lightbulb-fern-orb": 1
+  },
+
+  "output": [
+    {
+      "items": {
+        "simple-recharger": 1
+      },
+      "weight": 1
+    }
+  ],
+
+  "time": [3000, 4000]
+}

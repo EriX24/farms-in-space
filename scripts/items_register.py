@@ -4,6 +4,7 @@ import random
 
 from scripts.assets import ItemAssets
 from scripts import plants_register
+from scripts.plants_register import init_plant_rect
 
 pickup_items = {}
 items = []
@@ -274,12 +275,51 @@ register_item(LightbulbOrbItem)
 
 # Simple recharger
 class SimpleRechargerItem(Item):
+    """This is canonically a drink - EriX24"""
+    name = "simple-recharger"
+    item_icon = ItemAssets.recharger
+
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
-        self.init_rect(x, y)
         self.name = "simple-recharger"
+        self.image = ItemAssets.recharger
+
+        self.init_rect(x, y)
+
+        self.uses = 3
+
+    def use(self, player):
+        player.electricity += 2
+
+        if self.uses > 1:
+            self.uses -= 1
+            print(self.uses)
+            return False
+
+        index = player.items.index(self)
+        depleted_version = DepletedRechargerItem(0, 0, True)
+        player.items[index] = depleted_version
+
+        return False
 
     # TODO: Make this a 3 use item that can be recharged
+
+
+register_item(SimpleRechargerItem)
+
+
+class DepletedRechargerItem(Item):
+    name = "depleted-recharger"
+    item_icon = ItemAssets.depleted_recharger
+
+    def __init__(self, x: int, y: int, has_gravity: bool):
+        super().__init__(x, y, has_gravity)
+        self.name = "depleted-recharger"
+        self.image = ItemAssets.depleted_recharger
+        self.init_rect(x, y)
+
+
+register_item(DepletedRechargerItem)
 
 
 # Purified Lightbulb Fern Orb
