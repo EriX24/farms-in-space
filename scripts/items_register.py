@@ -1,6 +1,7 @@
 # Create new items in this file, don't forget to register the file though!
 import math
 import random
+from wsgiref.util import request_uri
 
 from scripts.assets import ItemAssets
 from scripts import plants_register
@@ -112,6 +113,9 @@ class Item:
     def use(self, player):
         """Override every time. Return true to consume the item, and false to not.
          Add functionality before the return"""
+        return False
+
+    def fuel(self, generator):
         return False
 
     def init_rect(self, x, y):
@@ -248,6 +252,12 @@ class CompressedEnergyLeavesItem(Item):
 
     def use(self, player):
         return False
+
+    def fuel(self, generator):
+        # In lore, it's not 30 but 20 because the generator needs a stronger fuel to sustain itself
+        # and only some of parts energy leaf can do that
+        generator.electricity += 10
+        return True
 
 
 register_item(CompressedEnergyLeavesItem)

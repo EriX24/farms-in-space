@@ -1007,12 +1007,73 @@ class Generator:
         self.rect = self.assets.generator_default.get_rect()
         self.rect.x = 20
         self.rect.y = 200
+        self.electricity = 10
 
     def blit(self):
+        # TODO: Make the engin refuelable
+        distance = abs(self.rect.center[0] - player.rect.x)
+
+        volume = self.electricity / (500 * 1.25)
+        volume -= distance / 2000
+
+        if volume > 1:
+            volume = 1
+        elif volume < 0:
+            volume = 0
+
+        # Max distance: 1232
+
+        SFXDispenser.zap.set_volume(volume)
+
+        energy_orb = pygame.surface.Surface((24, 26), pygame.SRCALPHA)
+        r_change = 90 / 10
+        g_change = 36 / 10
+        b_change = -1 / 10
+
+        # I am dying inside :)
+        for _ in range(4):
+            if random.random() <= self.electricity / (2000 * 1.25):
+                angle = random.randint(0, 360)
+
+                adjacent = math.cos(angle) * 20
+                opposite = math.sin(angle) * 20
+
+                pygame.draw.line(energy_orb, (135, 206, 255), (12, 13), (12 + adjacent, 13 + opposite))
+
+                SFXDispenser.zap.play()
+
+        for i_ in range(int(self.electricity // 12.5) + 1):
+            pygame.draw.circle(energy_orb, (135 + r_change * i_, 206 + g_change * i_, 255 + b_change * i_),
+                               (12, 13),
+                               int(self.electricity) // 12.5 - i_ + 1)
+
+        # b4e0fc (225, 242, 254)  +90, +36, -1
+
+        energy_orb = pygame.transform.scale(energy_orb, (96, 104))
+
+        orb_shift = [0, 0]
+        if random.random() <= self.electricity / (7500 * 1.25):
+            orb_shift[0] += random.choice([-4, 4])
+            if self.electricity >= (75 * 1.25) and random.random() <= self.electricity / (10000 * 1.25):
+                orb_shift[0] += (orb_shift[0] / abs(orb_shift[0])) * 8
+
+        if random.random() <= self.electricity / (7500 * 1.25):
+            orb_shift[1] += random.choice([-4, 4])
+            if self.electricity >= (75 * 12.5) and random.random() <= self.electricity / (10000 * 1.25):
+                orb_shift[1] += (orb_shift[1] / abs(orb_shift[1])) * 8
+
+        centered_display.blit(energy_orb, (36 + orb_shift[0], 436 + orb_shift[1]))
+
         centered_display.blit(self.assets.generator_default, self.rect)
 
     def update(self):
-        pass
+        self.electricity -= clock.get_time() / 24000
+
+        if self.electricity < 0:
+            self.electricity = 0
+        elif self.electricity > 125:
+            self.electricity = 125
+
 
 
 # Farms class
@@ -1276,10 +1337,17 @@ class Player:
 
         # Use or drop item
         if not self.dispenser_selected:
+            # TODO: Make the engin refuelable
             if pressed_keys[pygame.K_l] and self.items and l_ready:
                 if player.rect.x >= 1000 and self.items[-1].storable:
                     dispenser.que_item(self.items[-1])
                     self.items = self.items[:-1]
+
+                elif player.rect.x <= 190 and self.items[-1].fuel(generator):
+                    self.items = self.items[:-1]
+
+                elif player.rect.x <= 190 and self.items[0].fuel(generator):
+                    self.items = self.items[-1:]
 
                 else:
                     self.items[-1].rect.center = player.rect.center
