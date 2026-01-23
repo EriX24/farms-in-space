@@ -89,6 +89,7 @@ def pale_moss_synergy(func):
 
 
 class PaleBushPlant(Plant):
+    # The seeds are beans that hang from the bush but im too lazy to make them show up
     name = "pale-bush"
 
     def __init__(self, x: int, environment: str):
@@ -110,6 +111,9 @@ class PaleBushPlant(Plant):
         self.generate_leaf_progress = 0
         self.generate_cooldown = 1000
         self.GENERATE_COOLDOWN_CONST = 1000
+
+        self.seed_progress = 0
+        self.SEED_COOLDOWN = 1200000
 
         # Cooldowns
         self.cooldowns = [self.grow_cooldown, self.generate_cooldown]
@@ -133,11 +137,14 @@ class PaleBushPlant(Plant):
 
     @pale_moss_synergy
     def update(self, player, pressed_keys, pickup_ready, farm: Farm, dispenser):
+        print(self.seed_progress, "bush")
+
         # Grow the bush
         self.generate_cooldown = self.cooldowns[1]
         self.grow()
 
         self.generate_leaf_progress += clock.get_time()
+        self.seed_progress += clock.get_time()
 
         if not dispenser.stored_items.get("energy-leaf"):
             item_list = list(dispenser.stored_items.keys())
@@ -159,6 +166,22 @@ class PaleBushPlant(Plant):
         for _ in range(int(self.generate_leaf_progress // self.generate_cooldown)):
             dispenser.stored_items["energy-leaf"] += 1
 
+        for _ in range(int(self.seed_progress // self.SEED_COOLDOWN)):
+            if not dispenser.stored_items.get("pale-bush-seed"):
+                item_list = list(dispenser.stored_items.keys())
+                item_list.sort()
+
+                current_item = item_list[dispenser.current_item]
+
+                dispenser.stored_items["pale-bush-seed"] = 1
+
+                item_list = list(dispenser.stored_items.keys())
+                item_list.sort()
+
+                dispenser.current_item = item_list.index(current_item)
+            else:
+                dispenser.stored_items["pale-bush-seed"] += 1
+
         # 160.19 is the width
 
         # 0.005 po/second
@@ -171,6 +194,7 @@ class PaleBushPlant(Plant):
         self.cooldown_constants = [self.GROW_COOLDOWN_CONST, self.GENERATE_COOLDOWN_CONST]
 
         self.generate_leaf_progress %= self.generate_cooldown
+        self.seed_progress %= self.SEED_COOLDOWN
 
     @staticmethod
     def evaluate_output(farm: Farm):
@@ -333,6 +357,7 @@ register_plant(PaleBushPlant)
 
 
 class LightBulbFern(Plant):
+    # The seed come from the stem in the middle the 'fruit' is used for a different purpose (to be decided)
     name = "light-bulb-fern"
 
     def __init__(self, x: int, environment: str):
@@ -350,13 +375,16 @@ class LightBulbFern(Plant):
         self.stem_y = 212
         self.stem_x = 0
 
-        self.cooldown_progress = 0
+        self.grow_progress = 0
         self.grow_cooldown = 10000  # 0.3 seconds
         self.GROW_COOLDOWN_CONST = 10000
 
         self.bulb_move_progress = 0
         self.bulb_move_cooldown = 80000
         self.BULB_MOVE_CONST = 80000
+
+        self.seed_progress = 0  # Unaffected by pale moss
+        self.seed_cooldown = 1200000  # Rework the cooldown to be more reasonable
 
         # Cooldowns
         self.cooldowns = [self.grow_cooldown, self.bulb_move_cooldown]
@@ -373,7 +401,31 @@ class LightBulbFern(Plant):
 
     @pale_moss_synergy
     def update(self, player, pressed_keys, pickup_ready, farm: Farm, dispenser):
+        print(self.seed_progress, "ligh bulb")
         self.dispenser_ref = dispenser
+
+        self.overall_time += clock.get_time()
+        self.seed_progress += clock.get_time()
+        self.bulb_move_progress += clock.get_time()
+        self.grow_progress += clock.get_time()
+
+        for _ in range(self.seed_progress // self.seed_cooldown):
+            if not dispenser.stored_items.get("light-bulb-fern-seed"):
+                item_list = list(dispenser.stored_items.keys())
+                item_list.sort()
+
+                current_item = item_list[dispenser.current_item]
+
+                dispenser.stored_items["light-bulb-fern-seed"] = 1
+
+                item_list = list(dispenser.stored_items.keys())
+                item_list.sort()
+
+                dispenser.current_item = item_list.index(current_item)
+            else:
+                dispenser.stored_items["light-bulb-fern-seed"] += 1
+
+            self.seed_progress %= self.seed_cooldown
 
         self.grow()
 
@@ -430,10 +482,8 @@ class LightBulbFern(Plant):
     def grow(self):
         # print(self.overall_time, self.growing)
         if self.growing:
-            self.overall_time += clock.get_time()
-
-            if self.cooldown_progress >= self.grow_cooldown:
-                for _ in range(self.cooldown_progress // self.grow_cooldown):
+            if self.grow_progress >= self.grow_cooldown:
+                for _ in range(self.grow_progress // self.grow_cooldown):
                     self.stem_y -= 4
                     self.image.blit(FarmAssets.lightbulb_fern_stem, (self.stem_x, self.stem_y))
 
@@ -447,10 +497,7 @@ class LightBulbFern(Plant):
                     self.enrich_bulbs()
                     self.spawn_bulb()
 
-                self.cooldown_progress %= self.grow_cooldown
-
-            else:
-                self.cooldown_progress += clock.get_time()
+                self.grow_progress %= self.grow_cooldown
 
         else:
             if self.bulb_move_progress >= self.bulb_move_cooldown:
@@ -464,9 +511,6 @@ class LightBulbFern(Plant):
                 #     self.spawn_bulb()
 
                 self.bulb_move_progress %= self.bulb_move_cooldown
-
-            else:
-                self.bulb_move_progress += clock.get_time()
 
     def spawn_bulb(self):
         outcomes = [0]
@@ -548,6 +592,7 @@ register_plant(LightBulbFern)
 
 
 class PaleMoss(Plant):
+    # The 'seed' is just a swathe that was created by taking pieces of the moss from different places
     name = "pale-moss"
 
     def __init__(self, x, environment: str):
@@ -574,6 +619,9 @@ class PaleMoss(Plant):
         self.flower_progress = 0
         self.FLOWER_COOLDOWN = 27500
 
+        self.seed_progress = 0
+        self.SEED_COOLDOWN = 1200000
+
         self.flowers = 0
 
         self.growing = True
@@ -583,6 +631,7 @@ class PaleMoss(Plant):
         screens["centered_display"].blit(self.flower_image, self.rect)
 
     def update(self, player, pressed_keys, pickup_ready, farm: Farm, dispenser):
+        print(self.seed_progress, "pale moss")
         # print(self.rect, farm.x, self.x)
 
         # pygame.draw.rect(screens["centered_display"], "#FFFFFF", self.rect)
@@ -590,6 +639,7 @@ class PaleMoss(Plant):
         self.shift_increment_progress += clock.get_time()
         self.grow_progress += clock.get_time()
         self.flower_progress += clock.get_time()
+        self.seed_progress += clock.get_time()
 
         for _ in range(self.grow_progress // self.GROW_COOLDOWN):
             # print(self.flowers, "flowers")
@@ -621,9 +671,27 @@ class PaleMoss(Plant):
 
             self.flowers += 1
 
+        for _ in range(self.seed_progress // self.SEED_COOLDOWN):
+            if not dispenser.stored_items.get("pale-moss-swathe"):
+                item_list = list(dispenser.stored_items.keys())
+                item_list.sort()
+
+                current_item = item_list[dispenser.current_item]
+
+                dispenser.stored_items["pale-moss-swathe"] = 1
+
+                item_list = list(dispenser.stored_items.keys())
+                item_list.sort()
+
+                dispenser.current_item = item_list.index(current_item)
+            else:
+                dispenser.stored_items["pale-moss-swathe"] += 1
+
+
         self.shift_increment_progress %= self.SHIFT_INCREMENT_COOLDOWN
         self.grow_progress %= self.GROW_COOLDOWN
         self.flower_progress %= self.FLOWER_COOLDOWN
+        self.seed_progress %= self.SEED_COOLDOWN
 
     def evaluate_output(self, farm: Farm):
         pass

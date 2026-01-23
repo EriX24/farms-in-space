@@ -188,8 +188,8 @@ class Dispenser:
         self.history = ["unselected"]  # What it will go to when you press L
 
         # Items
-        self.stored_items = {"pale-air": 50, "pale-argon": 50, "pale-moss-swathe": 6,
-                             "light-bulb-fern-seed": 5, "pale-bush-seed": 5, "simple-recharger": 1}
+        self.stored_items = {"pale-air": 50, "pale-argon": 50, "pale-moss-swathe": 0,
+                             "light-bulb-fern-seed": 0, "pale-bush-seed": 1, "simple-recharger": 1}
 
         # Items being fabricated
         self.fabricating_items = []
@@ -217,7 +217,7 @@ class Dispenser:
         self.d_pressed = 0
 
         # Currently selected
-        self.current_item = 0
+        self.current_item = 0  # TODO: Rework this is the future to be a key instead of a index
         self.current_recipe = 0
         self.current_environment_recipe = 0
         self.current_farm = 0
@@ -795,13 +795,15 @@ class Dispenser:
                     #
                     current_item_ = items_register.items_ref[item_list_[self.current_item]]
                     #
-                    if current_item_.plantable:
+                    if current_item_.plantable and self.stored_items[item_list_[self.current_item]] >= 1:
                         current_farm = [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][self.current_farm]
                         new_plant_class = plants_register.plant_ref[current_item_.plant]
                         new_plant = new_plant_class(current_farm.x + random.randint(0, 196) // 4 * 4,
                                                     current_farm.environment)
 
                         current_farm.add_plant(new_plant)
+
+                        self.stored_items[item_list_[self.current_item]] -= 1
 
                 item_list_ = list(self.stored_items)
                 item_list_.sort()
@@ -1007,7 +1009,7 @@ class Generator:
         self.rect = self.assets.generator_default.get_rect()
         self.rect.x = 20
         self.rect.y = 200
-        self.electricity = 10
+        self.electricity = 125
 
     def blit(self):
         # TODO: Make the engin refuelable
@@ -1748,7 +1750,8 @@ while True:
         # print(farms.farm_1)
         # print(item_list)
         # print()
-        print(farms.farm_1.environment_items)
+        # print(farms.farm_1.environment_items)
+        print(generator.electricity)
         del item_list
 
     screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
@@ -1760,7 +1763,7 @@ while True:
 
     item_list_ = list(dispenser.stored_items)
     item_list_.sort()
-    # print("------------------------------------") # Re-enable this if there are multiple prints to separate ticks
+    print("------------------------------------") # Re-enable this if there are multiple prints to separate ticks
 
     # print(clock.get_fps())
     # print(dispenser.fabricating_items)
