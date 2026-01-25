@@ -144,7 +144,7 @@ plants_register.FARM_UPDATE_TICKS = FARM_UPDATE_TICKS
 
 
 # Hologram creator
-class Holograms:
+class Holograms:  # This will probably never be used
     def __init__(self):
         self.holograms = {}
 
@@ -833,6 +833,7 @@ class Dispenser:
 
 
             elif self.entry == "environment":
+                # Environment selection
                 if pressed_keys[pygame.K_a] and player.a_ready:
                     self.a_pressed = self.arrow_hold_ticks
                     self.current_environment_recipe -= 1
@@ -840,6 +841,7 @@ class Dispenser:
 
                     SFXDispenser.switch.play()
 
+                # I don't know what this does
                 elif pressed_keys[pygame.K_a] and not player.a_ready:
                     if self.a_pressed > 0:
                         self.a_pressed -= clock.get_time()
@@ -856,6 +858,7 @@ class Dispenser:
 
                     SFXDispenser.switch.play()
 
+                # I don't know what this does
                 elif pressed_keys[pygame.K_d] and not player.d_ready:
                     if self.d_pressed > 0:
                         self.d_pressed -= clock.get_time()
@@ -865,6 +868,7 @@ class Dispenser:
                 else:
                     self.d_pressed = 0
 
+                # Selection a environment
                 if pressed_keys[pygame.K_k] and k_ready:
                     self.frame_lit_ticks = self.frame_lit_duration
 
@@ -1012,22 +1016,27 @@ class Generator:
         self.electricity = 125
 
     def blit(self):
-        # TODO: Make the engin refuelable
         distance = abs(self.rect.center[0] - player.rect.x)
 
+        # Change the volume based on the current electricity and distance from the player
         volume = self.electricity / (500 * 1.25)
         volume -= distance / 2000
 
+        # Cap the volume (I don't know if this is needed, pygame-CE might catch)
         if volume > 1:
             volume = 1
         elif volume < 0:
             volume = 0
 
-        # Max distance: 1232
+        # Max distance from the player: 1232
 
+        # Apply the volume change
         SFXDispenser.zap.set_volume(volume)
 
+        # The surface for the orb
         energy_orb = pygame.surface.Surface((24, 26), pygame.SRCALPHA)
+
+        # How much the colour should change when the electricity changes a size up
         r_change = 90 / 10
         g_change = 36 / 10
         b_change = -1 / 10
@@ -1044,6 +1053,7 @@ class Generator:
 
                 SFXDispenser.zap.play()
 
+        # Draw a circle with decreasing size from the maximum size based on the electricity
         for i_ in range(int(self.electricity // 12.5) + 1):
             pygame.draw.circle(energy_orb, (135 + r_change * i_, 206 + g_change * i_, 255 + b_change * i_),
                                (12, 13),
@@ -1051,8 +1061,10 @@ class Generator:
 
         # b4e0fc (225, 242, 254)  +90, +36, -1
 
+        # Resize the orb to the same resolution as the rest of the game
         energy_orb = pygame.transform.scale(energy_orb, (96, 104))
 
+        # Random orb jitter
         orb_shift = [0, 0]
         if random.random() <= self.electricity / (7500 * 1.25):
             orb_shift[0] += random.choice([-4, 4])
@@ -1064,23 +1076,27 @@ class Generator:
             if self.electricity >= (75 * 12.5) and random.random() <= self.electricity / (10000 * 1.25):
                 orb_shift[1] += (orb_shift[1] / abs(orb_shift[1])) * 8
 
+        # Blit the orb
         centered_display.blit(energy_orb, (36 + orb_shift[0], 436 + orb_shift[1]))
 
+        # Blit the generator
         centered_display.blit(self.assets.generator_default, self.rect)
 
     def update(self):
+        # Deduct the electricity
         self.electricity -= clock.get_time() / 24000
 
+        # Cap the electricity
         if self.electricity < 0:
             self.electricity = 0
         elif self.electricity > 125:
             self.electricity = 125
 
 
-
 # Farms class
 class Farms:
     def __init__(self):
+        # Farm creation
         self.assets = FarmAssets
         new_item = plants_register.LightBulbFern(408 - 60, "pale")
         self.farm_1 = farm_creator.Farm(224)
@@ -1098,6 +1114,7 @@ class Farms:
         self.farm_3 = farm_creator.Farm(632)
         self.farm_4 = farm_creator.Farm(836)
 
+        # Growing the grass when the game loads so it looks natural
         for farm_ in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
             for effect in farm_.effects:
                 if type(effect) == environment_effects.Grass:
@@ -1115,6 +1132,7 @@ class Farms:
         self.farm_1.environment = "pale"
         self.farm_1.effects_added = False
 
+        # Farm update tick "progress"
         self.progress = 0
         # Farm box pos: 224 248
         # Farm box pos: 428 248
@@ -1145,17 +1163,21 @@ class Farms:
         #                       (836, 248))
         #
         # centered_display.blit(self.assets.farm_box, (836, 248))
+
+        # Blit each farm
         self.farm_1.blit()
         self.farm_2.blit()
         self.farm_3.blit()
         self.farm_4.blit()
 
     def update(self):
+        # Advance the tick timer
         self.progress += clock.get_time()
 
         if self.progress:
             for _ in range(int(self.progress // FARM_UPDATE_TICKS)):
                 for farm_object in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
+                    # Get the required items for the current environments
                     environment_req = \
                         [environment_recipe_manager.recipes[environment]["input"] for environment in
                          environment_recipe_manager.recipes
@@ -1187,13 +1209,16 @@ class Farms:
                                                                                0) - farm_object.environment_items.get(
                             req_item, 0)) >= 0:
 
+                            # Deduct resources accordingly
                             if dispenser.stored_items.get(req_item, None) is not None:
+                                # Deduct from stored items
                                 dispenser.stored_items[req_item] -= (
                                         required_item - farm_object.provided_items.get(req_item,
                                                                                        0) - farm_object.environment_items.get(
                                     req_item, 0))
 
                                 if farm_object.provided_items.get(req_item, None) is not None:
+                                    # Deduct from items provided by the farm
                                     farm_object.provided_items[req_item] -= (
                                             required_item - farm_object.environment_items.get(
                                         req_item, 0))
@@ -1232,6 +1257,7 @@ class Farms:
                     # Evaluate the plants
                     for plant_ in farm_object.plants:
                         plant_.evaluate_input(farm_object)
+
         for farm_ in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
             farm_.update(player, pressed_keys, j_ready, dispenser)
 
@@ -1244,18 +1270,26 @@ class Farms:
 # Player class
 class Player:
     def __init__(self):
+        # Assets
         self.assets = PlayerAssets
+
+        #
         self.movement_ms = 0
 
+        # Variables
         self.direction = "right"
         self.rect = self.assets.player_right.get_rect()
         self.rect.x = 732
         self.rect.y = 496
+
+        # Electricity stuff
         self.electricity = 25  # Max energy is 25
         self.electricity_rect = self.assets.energy_bar.get_rect()  # Max energy is 25
         self.electricity_rect.x = 12
         self.electricity_rect.y = 748
+        self.electricity_bar = pygame.rect.Rect(16, 752, 0, 40)
 
+        # Booleans
         self.dispenser_selected = False
         self.select_ready = True
         self.w_ready = True
@@ -1263,14 +1297,15 @@ class Player:
         self.a_ready = True
         self.d_ready = True
 
-        self.electricity_bar = pygame.rect.Rect(16, 752, 0, 40)
-
+        # Held items
         self.items = []
 
     def blit(self):
+        # Player image
         centered_display.blit({"right": self.assets.player_right, "left": self.assets.player_left}[self.direction],
                               self.rect)
 
+        # Electricity
         display.blit(self.assets.energy_bar, self.electricity_rect)
         pygame.draw.rect(display, "#FFFFFF", self.electricity_bar)
 
@@ -1279,6 +1314,7 @@ class Player:
 
             item_image = self.items[0].image.copy()
 
+            # Darken the first item
             for x in range(item_image.get_size()[0]):
                 for y in range(item_image.get_size()[1]):
                     if self.items[0].image.get_at((x, y))[0]:
@@ -1291,10 +1327,12 @@ class Player:
             # item_image.fill("#000000")
             # item_image.set_colorkey("#000000")
 
+            # Item rect configuration
             item_rect.center = self.rect.center
             item_rect.bottom = self.rect.top
             item_rect.right = self.rect.right - 8
 
+            # Show the items on top of the player
             if len(self.items) >= 2 and self.rect.left + 8 + self.items[1].image.get_width() > item_rect.left:
                 centered_display.blit(item_image, item_rect)
             else:
@@ -1309,6 +1347,7 @@ class Player:
                 centered_display.blit(self.items[1].image, item_rect)
 
     def update(self, keyboard):
+        # Allow the player to still move the same amount in lower FPS's
         if clock.get_fps() < 55:
             self.movement_ms += clock.get_time()
 
@@ -1329,6 +1368,7 @@ class Player:
                     else:
                         self.rect.x += 4
 
+                # Prevent the player from going out of bounds
                 if self.rect.x > 1316:
                     self.rect.x = 1316
 
@@ -1337,25 +1377,30 @@ class Player:
 
             self.movement_ms %= (1000 / 240)
 
-        # Use or drop item
         if not self.dispenser_selected:
             # TODO: Make the engin refuelable
+
             if pressed_keys[pygame.K_l] and self.items and l_ready:
+                # Storing the item
                 if player.rect.x >= 1000 and self.items[-1].storable:
                     dispenser.que_item(self.items[-1])
                     self.items = self.items[:-1]
 
+                # Fueling the generator with the item
                 elif player.rect.x <= 190 and self.items[-1].fuel(generator):
                     self.items = self.items[:-1]
 
+                # Fueling the generator with the item
                 elif player.rect.x <= 190 and self.items[0].fuel(generator):
                     self.items = self.items[-1:]
 
+                # Drop the item
                 else:
                     self.items[-1].rect.center = player.rect.center
                     items.append(self.items[-1])
                     self.items = self.items[:-1]
 
+            # Consume the item
             if pressed_keys[pygame.K_k] and self.items and k_ready:
                 for item_ in self.items[::-1]:
                     item_used = item_.use(self)
@@ -1371,6 +1416,7 @@ class Player:
         # Electricity
         self.electricity -= clock.get_time() / 24000
 
+        # Dev tools
         if dev_tools:
             if keyboard[pygame.K_MINUS]:
                 self.electricity -= 0.25
@@ -1378,12 +1424,14 @@ class Player:
             if keyboard[pygame.K_EQUALS]:
                 self.electricity += 0.25
 
+        # Cap the elctricity
         if self.electricity > 25:
             self.electricity = 25
 
         if self.electricity < 0:
             self.electricity = 0
 
+        # Display the bar based on the electricity
         if self.electricity == 25:
             self.electricity_bar.width = 400
         elif self.electricity == 0:
@@ -1391,6 +1439,7 @@ class Player:
         else:
             self.electricity_bar.width = int(((((self.electricity / 25) * 400) // 4) * 4) + 4)
 
+        # Position the electricity bar
         self.electricity_rect.y = screen.get_height() - 64
         self.electricity_bar.y = screen.get_height() - 60
 
@@ -1433,11 +1482,13 @@ class Player:
             self.d_ready = True
 
     def pickup(self):
+        """Picking up a item"""
         if len(self.items) != 2:
             self.items.append(pickup_items[min(pickup_items.keys())])
             items_register.items.remove(pickup_items[min(pickup_items.keys())])
 
     def ui_interaction(self):
+        """Interaction with the dispenser"""
         if self.dispenser_selected:
             if dispenser.entry == "unselected":
                 if pressed_keys[pygame.K_s] and self.s_ready:
@@ -1459,6 +1510,7 @@ class Player:
                 dispenser.history = dispenser.history[:-1]
 
 
+# Initiate the classes
 holograms = Holograms()
 dispenser = Dispenser()
 generator = Generator()
@@ -1487,7 +1539,9 @@ player = Player()
 #         # item.rect.y = (item.rect.y // 4) * 4
 
 
+# Loop
 while True:
+    # Process the events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
@@ -1511,20 +1565,24 @@ while True:
                                          centered_display=centered_display,
                                          overlay=overlay)
 
+    # Fill the surfaces
     screen.fill("#303033")
     display.fill("#30303300")
     centered_display.fill("#30303300")
     overlay.fill("#30303300")
 
+    # Inputs
     mouse_pos = pygame.mouse.get_pos()
     mouse_keys = pygame.mouse.get_pressed()
 
     pressed_keys = pygame.key.get_pressed()
 
+    # Items and the items eligible for pickup
     items_register.pickup_items = {}
     items = items_register.items
     pickup_items = items_register.pickup_items
 
+    # When in menu
     if mode == "menu":
         if not pygame.mixer.get_busy():
             ost_authorised.play(1)
@@ -1549,6 +1607,7 @@ while True:
             elif stars[star_idx][1] >= 3000:
                 stars[star_idx] = []
 
+        # Remove stars that can no longer be seen
         while [] in stars:
             stars.remove([])
 
@@ -1597,7 +1656,7 @@ while True:
         pass
 
     elif mode == "play":
-        # TEST
+        # Devtools
         if dev_tools and pressed_keys[pygame.K_i]:
             test_item = items_register.AirItem()
             items.append(test_item)
@@ -1612,6 +1671,7 @@ while True:
         for item in items:
             item.update(player, pressed_keys, j_ready)
 
+            # Devtools
             if pressed_keys[pygame.K_o] and dev_tools:
                 if item.dispensable:
                     item.rect.y = 0
@@ -1634,10 +1694,12 @@ while True:
 
             del test_item
 
+        # Devtools
         if dev_tools and pressed_keys[pygame.K_p]:
             items_register.items = []
             items = []
 
+        # Devtools
         if dev_tools and pressed_keys[pygame.K_r]:
             dispenser.screen_mode = 3
 
@@ -1655,14 +1717,18 @@ while True:
         generator.blit()
 
         # NOTICE: repurpose this code and make each farm run this for its plants [is this done yet?]
+        # Blit each plant
         for farm in [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4]:
             for plant in farm.plants:
                 plant.blit()
 
+        # Blit all the farms
         farms.blit()
 
+        # Blit the player
         player.blit()
 
+        # Bli the items
         for item in items:
             item.blit()
 
@@ -1670,14 +1736,18 @@ while True:
         if pickup_items:
             player.pickup()
 
+        # Items and pickupable items
         items = items_register.items
         pickup_items = items_register.pickup_items
 
+        # The room outline
         centered_display.blit(RoomAssets.room_outline, (20, 200))
 
+        # Show position of the pixel that has been clicked on [This can crash the game]
         if mouse_keys[0]:
             print((mouse_pos[0] // 4) * 4, (mouse_pos[1] // 4) * 4)
 
+        # Unused stuff
         if not glitch_effects:
             if player.electricity < 5:
                 hex_opacity = hex(int(200 - (player.electricity * 51)))[2:]
@@ -1705,6 +1775,7 @@ while True:
 
                 energy_depleting_glitching.set_alpha(150 - int(player.electricity) * 50)
 
+        # Devtools
         if dev_tools:
             display.blit(spacebar_command, (4, 4))
             display.blit(o_command, (4, 36))
@@ -1742,8 +1813,7 @@ while True:
         for i in range(len(fps)):
             display.blit(number_ref[fps[i]], (4 + 16 * i, screen.get_height() - 92))
 
-    # Pygame update
-
+    # Debugging
     if pressed_keys[pygame.K_f]:
         item_list = dispenser.stored_items
         # print(item_list)
@@ -1754,20 +1824,23 @@ while True:
         print(generator.electricity)
         del item_list
 
+    # Blit the displays on the screen
     screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
     screen.blit(display, (0, 0))
     screen.blit(overlay, (0, 0))
 
+    # Show the colour of the pixel clicked [MAY crash the game]
     if mouse_keys[0]:
         print(screen.get_at(mouse_pos))
 
     item_list_ = list(dispenser.stored_items)
     item_list_.sort()
-    print("------------------------------------") # Re-enable this if there are multiple prints to separate ticks
+    print("------------------------------------")  # Re-enable this if there are multiple prints to separate ticks
 
     # print(clock.get_fps())
     # print(dispenser.fabricating_items)
 
+    # Pygame update
     clock.tick(60)
 
     pygame.display.update()

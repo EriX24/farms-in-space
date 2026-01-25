@@ -24,6 +24,7 @@ items_ref = {
     # "pale-moss-swathe": PaleMossSwathe,
 }
 
+# Items image reference
 item_image_ref = {
     "item": ItemAssets.test_leaf,
     "test-item": ItemAssets.test_leaf,
@@ -49,6 +50,7 @@ def register(pygame_module, clock_, **surfaces):
 
 
 def register_item(item):
+    """Register an item, so it can be considered as an item (the game uses it for item features)"""
     items_ref[item.name] = item
     item_image_ref[item.name] = item.item_icon
 
@@ -111,11 +113,13 @@ class Item:
             self.floored = True
 
     def use(self, player):
-        """Override every time. Return true to consume the item, and false to not.
+        """Override every time. Return true to delete the item when consumed by the player, and false to not.
          Add functionality before the return"""
         return False
 
     def fuel(self, generator):
+        """Override every time. Return true to delete the item when fueled in the generator, and false to not.
+         Add functionality before the return"""
         return False
 
     def init_rect(self, x, y):
@@ -127,6 +131,11 @@ class Item:
 
 # Parent class (Air/Environment Item)
 class AirItem:
+    """
+    The parent class for all air type items
+    Same rules as regular items apply when inheriting
+    """
+
     dispensable = False
     plantable = False
     name = "air-item"
@@ -134,10 +143,12 @@ class AirItem:
     storable = True
 
     def __init__(self):
+        # Image and name
         self.name = "air-item"
         self.image = ItemAssets.pale_air
 
     def update(self, player, pressed_keys, j_ready):
+        # Remove the item if it's dropped
         items.remove(self)
 
     def blit(self):
@@ -145,6 +156,11 @@ class AirItem:
 
 
 class SeedItem:
+    """
+    The parent class for all seed type items
+    Same rules as regular items apply when inheriting
+    """
+
     dispensable = False
     plantable = True
     name = "seed-item"
@@ -153,9 +169,11 @@ class SeedItem:
     storable = True
 
     def __init__(self):
+        # Image
         self.image = ItemAssets.pale_air
 
     def update(self, player, pressed_keys, j_ready):
+        # Remove the item if it's dropped
         items.remove(self)
 
     def blit(self):
@@ -169,29 +187,41 @@ class TestItem(Item):
 
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
+
+        # Image
         self.image = ItemAssets.test_leaf
+
+        # Rect
         self.init_rect(x, y)
+
+        # Falling stuff
         self.x_shift = 0
         self.sin_shift = random.randint(-10, 10)
         self.orig_x = x
 
     def inject_update(self, player, pressed_keys, pickup_ready):
+        # Reset the sine shift
         self.x_shift = 0
+
+        # If its not floored reset the x value to the default one, so the sine wave animates properly
         if not self.floored:
             self.rect.x = self.orig_x
 
+        # Make the item fall slower
         if self.has_gravity and self.rect.y < 552:
             self.gravity -= (clock.get_time() / 1000) * (9.7 * 45)
 
         # if self.has_gravity and self.gravity > 10:
         #     self.gravity = 10
 
+        # Sine wave fall
         if not self.floored:
             self.x_shift = math.sin((pygame.time.get_ticks() / 200) + self.sin_shift) * 20
             self.rect.x += self.x_shift
             self.rect.x = (self.rect.x // 4) * 4
 
     def use(self, player):
+        # Give some electricity and consume the item
         player.electricity += 3
         return True
 
@@ -206,30 +236,42 @@ class EnergyLeafItem(Item):
 
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
+
+        # Image
         self.image = ItemAssets.energy_leaf
 
+        # Rect
         self.init_rect(x, y)
+
+        # Falling stuff
         self.x_shift = 0
         self.sin_shift = random.randint(-10, 10)
         self.orig_x = x
 
     def inject_update(self, player, pressed_keys, pickup_ready):
+        # Reset the sine shift
         self.x_shift = 0
+
+        # If its not floored reset the x value to the default one, so the sine wave animates properly
         if not self.floored:
             self.rect.x = self.orig_x
 
+        # Make the item fall slower
         if self.has_gravity and self.rect.y < 552:
             self.gravity -= (clock.get_time() / 1000) * (9.7 * 45)
 
+        # Cap the maximum accumulated graivty
         if self.has_gravity and self.gravity > 10:
             self.gravity = 10
 
+        # Sine wave fall
         if not self.floored:
             self.x_shift = math.sin((pygame.time.get_ticks() / 200) + self.sin_shift) * 20
             self.rect.x += self.x_shift
             self.rect.x = (self.rect.x // 4) * 4
 
     def use(self, player):
+        # Give some electricity and consume the item
         player.electricity += 3
         return True
 
@@ -248,13 +290,15 @@ class CompressedEnergyLeavesItem(Item):
         self.init_rect(x, y)
 
     def inject_update(self, player, pressed_keys, pickup_ready):
+        # Make the item fall slightly slower
         self.gravity -= (clock.get_time() / 1000) * (9.7 * 40)
 
     def use(self, player):
+        # Can't be used
         return False
 
     def fuel(self, generator):
-        # In lore, it's not 30 but 20 because the generator needs a stronger fuel to sustain itself
+        # In lore, it's not 30 but 10 because the generator needs a stronger fuel to sustain itself
         # and only some of parts energy leaf can do that
         generator.electricity += 10
         return True
@@ -270,6 +314,8 @@ class LightbulbOrbItem(Item):
 
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
+
+        # Required vars
         self.image = ItemAssets.lightbulb_fern_orb
         self.init_rect(x, y)
 
@@ -291,21 +337,28 @@ class SimpleRechargerItem(Item):
 
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
+
+        # Required variables
         self.name = "simple-recharger"
         self.image = ItemAssets.recharger
 
+        # Rect
         self.init_rect(x, y)
 
+        # How much times the item can be used
         self.uses = 3
 
     def use(self, player):
+        # Increase the electricity
         player.electricity += 2
 
+        # Consume a use counter when the item is consumed
         if self.uses > 1:
             self.uses -= 1
             print(self.uses)
             return False
 
+        # Replace the item with a depleted version when used up
         index = player.items.index(self)
         depleted_version = DepletedRechargerItem(0, 0, True)
         player.items[index] = depleted_version
@@ -324,6 +377,8 @@ class DepletedRechargerItem(Item):
 
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
+
+        # Required variables
         self.name = "depleted-recharger"
         self.image = ItemAssets.depleted_recharger
         self.init_rect(x, y)
@@ -339,6 +394,8 @@ class PurifiedLightbulbFernOrbItem(Item):
 
     def __init__(self, x: int, y: int, has_gravity: bool):
         super().__init__(x, y, has_gravity)
+
+        # Required variables
         self.image = ItemAssets.purified_lightbulb_fern_orb
         self.init_rect(x, y)
         self.name = "purified-lightbulb-fern-orb"
@@ -357,6 +414,8 @@ class PaleAirItem(AirItem):
 
     def __init__(self):
         super().__init__()
+
+        # Required variables
         self.name = "pale-air"
         self.image = ItemAssets.pale_air
 
@@ -371,6 +430,8 @@ class PaleArgonItem(AirItem):
 
     def __init__(self):
         super().__init__()
+
+        # Required variables
         self.name = "pale-argon"
         self.image = ItemAssets.pale_argon
 
@@ -385,9 +446,11 @@ class PaleMossSwathe(SeedItem):
     plant = "pale-moss"
 
     def __init__(self):
+        super().__init__()
+
+        # Required variables
         self.name = "pale-moss-swathe"
         self.image = ItemAssets.pale_moss_swathe
-        super().__init__()
 
 
 register_item(PaleMossSwathe)
@@ -400,9 +463,11 @@ class LightBulbFernSeed(SeedItem):
     plant = "light-bulb-fern"
 
     def __init__(self):
+        super().__init__()
+
+        # Required variables
         self.name = "light-bulb-fern-seed"
         self.image = ItemAssets.light_bulb_fern_seed
-        super().__init__()
 
 
 register_item(LightBulbFernSeed)
@@ -414,9 +479,11 @@ class PaleBushSeed(SeedItem):
     plant = "pale-bush"
 
     def __init__(self):
+        super().__init__()
+
+        # Required variables
         self.name = "pale-bush-seed"
         self.image = ItemAssets.pale_bush_seed
-        super().__init__()
 
 
 register_item(PaleBushSeed)

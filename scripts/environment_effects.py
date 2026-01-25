@@ -19,7 +19,7 @@ def register(pygame_module, clock_, **surfaces):
 
 
 def register_effect(name: str, effect):
-    """Registers an effect for modding purposes in the future"""
+    """Registers an effect"""
     effects[name] = effect
 
 
@@ -50,18 +50,17 @@ class PaleEnvironmentDirt:
         self.opacity = 0
 
     def blit(self, farm):
+        # TODO: Make this fade in and out
         FarmAssets.pale_dirt.set_alpha(self.opacity)
         screens["centered_display"].blit(FarmAssets.pale_dirt, (farm.x, 248))
 
+    def update(self, player, pressed_keys, pickup_ready, farm):
         if self.opacity < 255 and farm.environment == "pale":
             self.opacity += 3
         else:
             self.opacity -= 3
             if self.opacity <= 0:
                 farm.effects.remove(self)
-
-    def update(self, player, pressed_keys, pickup_ready, farm):
-        pass
 
 
 register_effect("default:pale-dirt", PaleEnvironmentDirt)
@@ -79,15 +78,18 @@ class PaleEnvironmentBackground:
         screens["centered_display"].blit(overlay, (farm.x, 248))
 
     def update(self, player, pressed_keys, pickup_ready, farm):
+        # Count the number of "default:pale-environment-mist" in the effects
         count = 0
         for effect in farm.effects:
             if type(effect) == type(self):
                 count += 1
 
-        if count > 1 and self.opacity <= 0:  # Prevent it from being spammed
+        # Prevent it from being spammed
+        if count > 1 and self.opacity <= 0:
             farm.effects.remove(self)
 
-        if farm.environment == "pale":  # Add opacity if the environment matches
+        # Add opacity if the environment matches and remove opacity if it doesn't
+        if farm.environment == "pale":
             if self.opacity < 255: self.opacity += 3
         else:
             if self.opacity > 0: self.opacity -= 3
@@ -102,14 +104,21 @@ register_effect("default:pale-environment-mist", PaleEnvironmentBackground)
 
 class PaleClouds:
     def __init__(self):
+        # Clouds currently on screen
         self.clouds = []  # [[0, 40, 0]]
+
+        # Cloud creation
         self.timer = 0
         self.CLOUD_CREATION_COOLDOWN = 2000  # 5 seconds
-        self.cloud_canvas = FarmAssets.blank_canvas.copy()
 
+        # Cloud move timer
         self.cloud_move_timer = 0
         self.CLOUD_MOVE_COOLDOWN = 500  # 0.5 seconds
 
+        # Canvas
+        self.cloud_canvas = FarmAssets.blank_canvas.copy()
+
+        # Rect
         self.rect = self.cloud_canvas.get_rect()
 
     def blit(self, farm):
@@ -117,12 +126,14 @@ class PaleClouds:
         self.rect.left = farm.x + 4
         self.rect.bottom = 464
 
+        # Display the clouds
         for cloud in self.clouds:
             cloud_img = FarmAssets.pale_cloud.copy()
             cloud_img.set_alpha(cloud[2])
             self.cloud_canvas.blit(cloud_img, (cloud[0], cloud[1]))
             del cloud_img
 
+        # Blit
         screens["centered_display"].blit(self.cloud_canvas, self.rect)
         self.cloud_canvas = FarmAssets.blank_canvas.copy()
 
@@ -130,20 +141,26 @@ class PaleClouds:
         self.timer += clock.get_time()
         self.cloud_move_timer += clock.get_time()
 
+        # Count the number of "default:pale-clouds" in the effects
         count = 0
         for effect in farm.effects:
             if type(effect) == type(self):
                 count += 1
 
+        # Remove the effect if...
         if not self.clouds and farm.environment != "pale":
+            # There are no clouds and the environment isn't pale
             farm.effects.remove(self)
         elif self.clouds == [] and count > 1:
+            # There aare other cloud effects loaded and this one doesn't have any clouds
             farm.effects.remove(self)
 
+        # Cloud creation
         if self.timer // self.CLOUD_CREATION_COOLDOWN and farm.environment == "pale":
             for _ in range(self.timer // self.CLOUD_CREATION_COOLDOWN):
                 self.clouds.append([random.randint(-40, 240) // 4 * 4, random.randint(40, 200) // 4 * 4, 0])
 
+        # Moving the clouds
         if self.cloud_move_timer > self.CLOUD_MOVE_COOLDOWN:
             for _ in range(self.cloud_move_timer // self.CLOUD_MOVE_COOLDOWN):
                 for cloud_idx in range(len(self.clouds)):
@@ -151,6 +168,7 @@ class PaleClouds:
                     if self.clouds[cloud_idx][2] < 20:
                         self.clouds[cloud_idx][2] += 5
 
+        # Destroy and offscreen clouds
         for cloud_idx in range(len(self.clouds)):
             if self.clouds[cloud_idx][1] <= -48:
                 self.clouds[cloud_idx] = ""
@@ -158,6 +176,7 @@ class PaleClouds:
         while "" in self.clouds:
             self.clouds.remove("")
 
+        # Reset the timers
         self.timer %= self.CLOUD_CREATION_COOLDOWN
         self.cloud_move_timer %= self.CLOUD_MOVE_COOLDOWN
 
@@ -172,6 +191,7 @@ class Dirt:
 
     @staticmethod
     def blit(farm):
+        # The dirt will always be there
         if farm.environment:
             screens["centered_display"].blit(FarmAssets.dirt, (farm.x, 248))
 
@@ -185,6 +205,7 @@ register_effect("default:dirt", Dirt)
 # Default environment grass
 class Grass:
     def __init__(self):
+        # Opacity
         self.layer_1_opacity = 0
         self.layer_1b_opacity = 0
         self.layer_2_opacity = 0
@@ -196,6 +217,7 @@ class Grass:
         self.OPACITY_INCREASE = 3
         self.OPACITY_DECREASE = 15
 
+        # Layers
         self.layer_1 = []
         self.layer_1b = []
         self.layer_2 = []
@@ -205,6 +227,7 @@ class Grass:
         self.layer_3 = []
         # self.layer_3b = []
 
+        # Layer images
         self.layer_1_image = FarmAssets.grass_canvas.copy()
         self.layer_2_image = FarmAssets.grass_canvas.copy()
         # self.layer_2b_image = FarmAssets.grass_canvas.copy()
@@ -213,9 +236,11 @@ class Grass:
         self.layer_1b_image = FarmAssets.grass_canvas.copy()
         self.image = FarmAssets.grass_canvas.copy()
 
+        # Update timer
         self.update_cooldown = 50
         self.update_progress = 0
 
+        # Reference for a filled layer
         self.filled_layer = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
                              24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
                              45, 46]
@@ -228,20 +253,7 @@ class Grass:
         self.image.blit(layer_1_copy, (0, 0))
         del layer_1_copy
 
-        # The 'buffer' layer between 1 and 2 to make it look more like grass
-        # if self.layer_1b_opacity > 0:
-        #     for pixel in self.layer_1b:
-        #         pixel_list = ["#117c13",
-        #                       "#138510",
-        #                       "#268b07",
-        #                       "#41980a"]
-        #
-        #         pygame.draw.rect(self.layer_1b_image, pixel_list[pixel[1]], (4 + pixel[0] * 4, 224, 4, 4))
-        #
-        #     self.layer_1b_image.set_alpha(self.layer_1b_opacity)
-        #     self.image.blit(self.layer_1b_image, (0, 0))
-
-        # Layer 1b
+        # Layer 1b ("buffer" layer)
         layer_1b_copy = self.layer_1b_image.copy()
         layer_1b_copy.set_alpha(self.layer_1b_opacity)
         self.image.blit(layer_1b_copy, (0, 0))
@@ -291,7 +303,7 @@ class Grass:
             if farm.environment == "default":
                 self.grow_layer()
 
-            """ Code
+            """ Old Code
             if not self.layer_1:
                 # Layer 1 and layer 1b creation
                 self.layer_1 = self.filled_layer.copy()
@@ -376,7 +388,7 @@ class Grass:
             #             if condition_1 and condition_2 and condition_3:
             #                 self.layer_3b.append(pixel)
 
-            # Opacity increase every update
+            # Opacity increase every update  TODO: Make the grass opacity change be based of the frames instead of each execution
             if self.layer_1_opacity < 255 and farm.environment == "default":
                 self.layer_1_opacity += self.OPACITY_INCREASE
                 self.layer_1_opacity = self.layer_1_opacity // 3 * 3

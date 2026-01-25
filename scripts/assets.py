@@ -186,6 +186,7 @@ class DispenserAssets:
     item_display = pygame.image.load(
         os.path.join("assets", "dispenser", "ui", "farms", "item-display.png")).convert_alpha()
 
+    # Frames
     farms_frame_lit = pygame.image.load(
         os.path.join("assets", "dispenser", "ui", "farms", "frame", "farms-frame-lit.png")).convert_alpha()
     farms_frame_unlit = pygame.image.load(
@@ -293,6 +294,7 @@ class FarmAssets:
     moss_flowers = pygame.image.load(
         os.path.join("assets", "farm", "plants", "pale-moss", "moss-flower.png")).convert_alpha()
 
+    # Leaf brush
     leaf_brush_1 = pygame.image.load(os.path.join("assets", "farm", "plants", "leaf-brush-1.png")).convert_alpha()
     leaf_brush_2 = pygame.image.load(os.path.join("assets", "farm", "plants", "leaf-brush-2.png")).convert_alpha()
     leaf_brush_3 = pygame.image.load(os.path.join("assets", "farm", "plants", "leaf-brush-3.png")).convert_alpha()
