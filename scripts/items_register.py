@@ -349,6 +349,9 @@ class SimpleRechargerItem(Item):
         self.uses = 3
 
     def use(self, player):
+        # Hotfix for the infinite energy trick
+        self.storable = False
+
         # Increase the electricity
         player.electricity += 2
 
