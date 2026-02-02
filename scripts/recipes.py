@@ -6,10 +6,10 @@ from scripts.logger import log_error
 
 class RecipeManager:
     def __init__(self):
-        # All recipies
+        # All recipes
         self.recipes = {}
 
-        # Load the recipies
+        # Load the recipes
         self.load_recipes()
 
     def load_recipes(self):
@@ -17,11 +17,11 @@ class RecipeManager:
         for recipe in os.listdir(os.path.join("assets", "recipes", "data")):
             if recipe.endswith(".json"):
                 try:
-                    # Try getting the recipy data
+                    # Try getting the recipe data
                     recipe_data = json.load(open(os.path.join("assets", "recipes", "data", recipe)))
 
                     if recipe_data.get("id"):
-                        # Register the recipy
+                        # Register the recipe
                         self.recipes[recipe_data["id"]] = recipe_data
 
                         # Register the blueprint
@@ -30,7 +30,7 @@ class RecipeManager:
                                          self.recipes[recipe_data["id"]]["blueprint"]) + ".png")
 
                     else:
-                        # No recipy ID
+                        # No recipe ID
                         log_error("No ID", self)
 
                 except json.decoder.JSONDecodeError:
@@ -40,10 +40,10 @@ class RecipeManager:
 
 class EnvironmentRecipeManager:
     def __init__(self):
-        # All recipies
+        # All recipes
         self.recipes = {}
 
-        # Load the recipies
+        # Load the recipes
         self.load_recipes()
 
     def load_recipes(self):
@@ -51,11 +51,11 @@ class EnvironmentRecipeManager:
         for recipe in os.listdir(os.path.join("assets", "environ", "data")):
             if recipe.endswith(".json"):
                 try:
-                    # Try getting the recipy data
+                    # Try getting the recipe data
                     recipe_data = json.load(open(os.path.join("assets", "environ", "data", recipe)))
 
                     if recipe_data.get("id"):
-                        # Register the recipy
+                        # Register the recipe
                         self.recipes[recipe_data["id"]] = recipe_data
 
                         # Register the blueprint
@@ -64,7 +64,7 @@ class EnvironmentRecipeManager:
                                          self.recipes[recipe_data["id"]]["blueprint"]) + ".png")
 
                     else:
-                        # No recipy ID
+                        # No recipe ID
                         log_error("No ID", self)
 
                 except json.decoder.JSONDecodeError:

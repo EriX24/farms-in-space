@@ -50,14 +50,13 @@ class PaleEnvironmentDirt:
         self.opacity = 0
 
     def blit(self, farm):
-        # TODO: Make this fade in and out
         FarmAssets.pale_dirt.set_alpha(self.opacity)
         screens["centered_display"].blit(FarmAssets.pale_dirt, (farm.x, 248))
 
     def update(self, player, pressed_keys, pickup_ready, farm):
         if self.opacity < 255 and farm.environment == "pale":
             self.opacity += 3
-        else:
+        elif farm.environment != "pale":
             self.opacity -= 3
             if self.opacity <= 0:
                 farm.effects.remove(self)
@@ -187,16 +186,24 @@ register_effect("default:pale-clouds", PaleClouds)
 # Default dirt
 class Dirt:
     def __init__(self):
-        pass
+        self.opacity = 0
 
-    @staticmethod
-    def blit(farm):
+    def blit(self, farm):
+        # Copy the image to avoid referencing the same data in memory and messing this up
+        dirt_img = FarmAssets.dirt.copy()
+        dirt_img.set_alpha(self.opacity)
+
         # The dirt will always be there
         if farm.environment:
-            screens["centered_display"].blit(FarmAssets.dirt, (farm.x, 248))
+            screens["centered_display"].blit(dirt_img, (farm.x, 248))
 
     def update(self, player, pressed_keys, pickup_ready, farm):
-        pass
+        if self.opacity < 255 and farm.environment == "default":
+            self.opacity += 3
+        elif farm.environment != "default":
+            self.opacity -= 3
+            if self.opacity <= 0:
+                farm.effects.remove(self)
 
 
 register_effect("default:dirt", Dirt)
@@ -210,35 +217,27 @@ class Grass:
         self.layer_1b_opacity = 0
         self.layer_2_opacity = 0
         self.layer_3_opacity = 0
-        # self.layer_3b_opacity = 0
-        # self.layer_2b_opacity = 0
 
         # Opacity stuff
-        self.OPACITY_INCREASE = 3
-        self.OPACITY_DECREASE = 15
+        self.OPACITY_INCREASE = 0.3
+        self.OPACITY_DECREASE = 1.5
 
         # Layers
         self.layer_1 = []
         self.layer_1b = []
         self.layer_2 = []
-        # self.layer_2b = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-        #                  24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
-        #                  45, 46]
         self.layer_3 = []
-        # self.layer_3b = []
 
         # Layer images
         self.layer_1_image = FarmAssets.grass_canvas.copy()
         self.layer_2_image = FarmAssets.grass_canvas.copy()
-        # self.layer_2b_image = FarmAssets.grass_canvas.copy()
         self.layer_3_image = FarmAssets.grass_canvas.copy()
-        # self.layer_3b_image = FarmAssets.grass_canvas.copy()
         self.layer_1b_image = FarmAssets.grass_canvas.copy()
         self.image = FarmAssets.grass_canvas.copy()
 
         # Update timer
         self.update_cooldown = 50
-        self.update_progress = 0
+        self.update_timer = 0
 
         # Reference for a filled layer
         self.filled_layer = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
@@ -296,10 +295,10 @@ class Grass:
         farm.effects.remove(self)
         farm.effects.append(self)
 
-        self.update_progress += clock.get_time()
+        self.update_timer += clock.get_time()
 
         # Effect update
-        for _ in range(self.update_progress // self.update_cooldown):
+        for _ in range(self.update_timer // self.update_cooldown):
             if farm.environment == "default":
                 self.grow_layer()
 
@@ -388,45 +387,48 @@ class Grass:
             #             if condition_1 and condition_2 and condition_3:
             #                 self.layer_3b.append(pixel)
 
-            # Opacity increase every update  TODO: Make the grass opacity change be based of the frames instead of each execution
-            if self.layer_1_opacity < 255 and farm.environment == "default":
-                self.layer_1_opacity += self.OPACITY_INCREASE
-                self.layer_1_opacity = self.layer_1_opacity // 3 * 3
-            elif not self.layer_1b and farm.environment != "default":
-                self.layer_1_opacity -= self.OPACITY_DECREASE
-                if self.layer_1_opacity < 0:
-                    self.layer_1 = []
+            # Opacity increase every update
+            if (farm.environment == "default" and self.layer_3_opacity < 255) or (farm.environment != "default" and self.layer_1 != []):
+                for _ in range(clock.get_time()):
+                    if self.layer_1_opacity < 255 and farm.environment == "default":
+                        self.layer_1_opacity += self.OPACITY_INCREASE
+                        self.layer_1_opacity = round(self.layer_1_opacity, 1) / 0.3 * 0.3
+                    elif not self.layer_1b and farm.environment != "default":
+                        self.layer_1_opacity -= self.OPACITY_DECREASE
+                        if self.layer_1_opacity < 0:
+                            self.layer_1 = []
+                            self.layer_1_opacity = 0
+                            break
 
-            if self.layer_1b and self.layer_1b_opacity < 255 <= self.layer_1_opacity and farm.environment == "default":
-                self.layer_1b_opacity += self.OPACITY_INCREASE
-                self.layer_1b_opacity = self.layer_1b_opacity // 3 * 3
-            elif not self.layer_2 and farm.environment != "default":
-                self.layer_1b_opacity -= self.OPACITY_DECREASE
-                if self.layer_1b_opacity < 0:
-                    self.layer_1b = []
-                    self.layer_1b_image = FarmAssets.grass_canvas.copy()
-                    self.layer_1b_opacity = 0
+                    if self.layer_1b and self.layer_1b_opacity < 255 <= self.layer_1_opacity and farm.environment == "default":
+                        self.layer_1b_opacity += self.OPACITY_INCREASE
+                        self.layer_1b_opacity = round(self.layer_1b_opacity, 1) / 0.3 * 0.3
+                    elif not self.layer_2 and farm.environment != "default":
+                        self.layer_1b_opacity -= self.OPACITY_DECREASE
+                        if self.layer_1b_opacity < 0:
+                            self.layer_1b = []
+                            self.layer_1b_image = FarmAssets.grass_canvas.copy()
+                            self.layer_1b_opacity = 0
 
-            # print(self.layer_3, farm.environment != "default", "testing")
-            if self.layer_2 and self.layer_2_opacity < 255 and farm.environment == "default":
-                self.layer_2_opacity += self.OPACITY_INCREASE
-                self.layer_2_opacity = self.layer_2_opacity // 3 * 3
-            elif self.layer_3 == [] and farm.environment != "default":
-                self.layer_2_opacity -= self.OPACITY_DECREASE
-                if self.layer_2_opacity < 0:
-                    self.layer_2 = []
-                    self.layer_2_image = FarmAssets.grass_canvas.copy()
-                    self.layer_2_opacity = 0
+                    if self.layer_2 and self.layer_2_opacity < 255 and farm.environment == "default":
+                        self.layer_2_opacity += self.OPACITY_INCREASE
+                        self.layer_2_opacity = round(self.layer_2_opacity, 1) / 0.3 * 0.3
+                    elif self.layer_3 == [] and farm.environment != "default":
+                        self.layer_2_opacity -= self.OPACITY_DECREASE
+                        if self.layer_2_opacity < 0:
+                            self.layer_2 = []
+                            self.layer_2_image = FarmAssets.grass_canvas.copy()
+                            self.layer_2_opacity = 0
 
-            if self.layer_3 and self.layer_3_opacity < 255 and farm.environment == "default":
-                self.layer_3_opacity += self.OPACITY_INCREASE
-                self.layer_3_opacity = self.layer_3_opacity // 3 * 3
-            else:
-                self.layer_3_opacity -= self.OPACITY_DECREASE
-                if self.layer_3_opacity < 0:
-                    self.layer_3 = []
-                    self.layer_3_image = FarmAssets.grass_canvas.copy()
-                    self.layer_3_opacity = 0
+                    if self.layer_3 and self.layer_3_opacity < 255 and farm.environment == "default":
+                        self.layer_3_opacity += self.OPACITY_INCREASE
+                        self.layer_3_opacity = round(self.layer_3_opacity, 1) / 0.3 * 0.3
+                    elif farm.environment != "default":
+                        self.layer_3_opacity -= self.OPACITY_DECREASE
+                        if self.layer_3_opacity < 0:
+                            self.layer_3 = []
+                            self.layer_3_image = FarmAssets.grass_canvas.copy()
+                            self.layer_3_opacity = 0
 
             # # UNUSED
             # if self.layer_3 and self.layer_2b_opacity < 150:
@@ -439,19 +441,12 @@ class Grass:
         # Show layer 1 pixels
         if self.layer_1:
             for pixel in self.layer_1:
-                # 117c13	(17,124,19)
-                # 138510	(19,133,16)
-                # 268b07	(38,139,7)
-                # 41980a
-
                 pixel_list = ["#117c13",
                               "#138510",
                               "#268b07",
                               "#41980a"]
 
                 pygame.draw.rect(self.layer_1_image, pixel_list[pixel[1]], (4 + pixel[0] * 4, 220, 4, 4))
-
-                # self.layer_1_image.blit(pixel_list[pixel[1]], (4 + pixel[0] * 4, 220))
 
         # Show layer 1b pixels
         if self.layer_1b:
@@ -495,7 +490,7 @@ class Grass:
         #         self.layer_3b_image.blit(FarmAssets.grass_pixel_0, (4 + pixel * 4, 228))
 
         # Reset the cooldown
-        self.update_progress %= self.update_cooldown
+        self.update_timer %= self.update_cooldown
 
     def grow_layer(self):
         if not self.layer_1:

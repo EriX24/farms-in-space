@@ -16,3 +16,6 @@ class SFXDispenser:
     switch.set_volume(0.1)
 
     zap = pygame.mixer.Sound(os.path.join("sfx", "dispenser", "zap.mp3"))
+
+    # Temporary placeholder for a notification sound that plays when an item is fabricated
+    fabricated = pygame.mixer.Sound(os.path.join("sfx", "dispenser", "fabricated.mp3"))

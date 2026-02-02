@@ -1,11 +1,7 @@
 # Create new items in this file, don't forget to register the file though!
 import math
 import random
-from wsgiref.util import request_uri
-
 from scripts.assets import ItemAssets
-from scripts import plants_register
-from scripts.plants_register import init_plant_rect
 
 pickup_items = {}
 items = []
@@ -197,15 +193,21 @@ class TestItem(Item):
         # Falling stuff
         self.x_shift = 0
         self.sin_shift = random.randint(-10, 10)
+        self.shift_value = 0
+
         self.orig_x = x
 
     def inject_update(self, player, pressed_keys, pickup_ready):
         # Reset the sine shift
         self.x_shift = 0
+        self.shift_value += clock.get_time() / 200
 
         # If its not floored reset the x value to the default one, so the sine wave animates properly
         if not self.floored:
             self.rect.x = self.orig_x
+        else:
+            self.orig_x = self.rect.x
+            self.shift_value = random.choice([0, math.pi])
 
         # Make the item fall slower
         if self.has_gravity and self.rect.y < 552:
@@ -216,7 +218,7 @@ class TestItem(Item):
 
         # Sine wave fall
         if not self.floored:
-            self.x_shift = math.sin((pygame.time.get_ticks() / 200) + self.sin_shift) * 20
+            self.x_shift = math.sin(self.shift_value) * 20
             self.rect.x += self.x_shift
             self.rect.x = (self.rect.x // 4) * 4
 
@@ -245,16 +247,20 @@ class EnergyLeafItem(Item):
 
         # Falling stuff
         self.x_shift = 0
-        self.sin_shift = random.randint(-10, 10)
+        self.shift_value = 0
         self.orig_x = x
 
     def inject_update(self, player, pressed_keys, pickup_ready):
         # Reset the sine shift
         self.x_shift = 0
+        self.shift_value += clock.get_time() / 200
 
         # If its not floored reset the x value to the default one, so the sine wave animates properly
         if not self.floored:
             self.rect.x = self.orig_x
+        else:
+            self.orig_x = self.rect.x
+            self.shift_value = random.choice([0, math.pi])
 
         # Make the item fall slower
         if self.has_gravity and self.rect.y < 552:
@@ -266,9 +272,12 @@ class EnergyLeafItem(Item):
 
         # Sine wave fall
         if not self.floored:
-            self.x_shift = math.sin((pygame.time.get_ticks() / 200) + self.sin_shift) * 20
+            self.x_shift = math.sin(self.shift_value) * 20
+
             self.rect.x += self.x_shift
+
             self.rect.x = (self.rect.x // 4) * 4
+
 
     def use(self, player):
         # Give some electricity and consume the item
@@ -300,7 +309,7 @@ class CompressedEnergyLeavesItem(Item):
     def fuel(self, generator):
         # In lore, it's not 30 but 10 because the generator needs a stronger fuel to sustain itself
         # and only some of parts energy leaf can do that
-        generator.electricity += 10
+        generator.electricity += 12.5
         return True
 
 
@@ -358,7 +367,7 @@ class SimpleRechargerItem(Item):
         # Consume a use counter when the item is consumed
         if self.uses > 1:
             self.uses -= 1
-            print(self.uses)
+            self.image = {2: ItemAssets.recharger_2left, 1: ItemAssets.recharger_1left}[self.uses]
             return False
 
         # Replace the item with a depleted version when used up
@@ -367,8 +376,6 @@ class SimpleRechargerItem(Item):
         player.items[index] = depleted_version
 
         return False
-
-    # TODO: Make this a 3 use item that can be recharged
 
 
 register_item(SimpleRechargerItem)
