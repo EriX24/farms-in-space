@@ -1,5 +1,7 @@
 # Create new items in this file, don't forget to register the file though!
+import json
 import math
+import os
 import random
 from scripts.assets import ItemAssets
 
@@ -34,6 +36,8 @@ item_image_ref = {
     "pale-moss-swathe": ItemAssets.pale_moss_swathe,
 }
 
+item_translations = json.load(open(os.path.join("assets", "translations", "items.json")))
+
 
 def register(pygame_module, clock_, **surfaces):
     global pygame
@@ -49,6 +53,14 @@ def register_item(item):
     """Register an item, so it can be considered as an item (the game uses it for item features)"""
     items_ref[item.name] = item
     item_image_ref[item.name] = item.item_icon
+
+
+def get_translation(key):
+    return item_translations.get(key, key)
+
+def load_translations(translations):
+    for translation in translations.keys():
+        item_translations[translation] = translations[translation]
 
 
 # Parent class (Item)
@@ -278,7 +290,6 @@ class EnergyLeafItem(Item):
 
             self.rect.x = (self.rect.x // 4) * 4
 
-
     def use(self, player):
         # Give some electricity and consume the item
         player.electricity += 3
@@ -307,9 +318,10 @@ class CompressedEnergyLeavesItem(Item):
         return False
 
     def fuel(self, generator):
-        # In lore, it's not 30 but 10 because the generator needs a stronger fuel to sustain itself
+        # In lore, it's not 30 but 4.5 because the generator needs a stronger fuel to sustain itself
         # and only some of parts energy leaf can do that
-        generator.electricity += 12.5
+        # (and to make the game slightly harder it got changed to 4.5 instead of 12.5)
+        generator.electricity += 4.5
         return True
 
 
@@ -362,7 +374,7 @@ class SimpleRechargerItem(Item):
         self.storable = False
 
         # Increase the electricity
-        player.electricity += 2
+        player.electricity += 3
 
         # Consume a use counter when the item is consumed
         if self.uses > 1:

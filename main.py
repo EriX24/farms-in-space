@@ -1,6 +1,8 @@
 import copy
 import ctypes
-# TODO: Fix plants generating air by placing them in different cells
+import json
+# TODO: Fix the energy bar disappearing when your start going below a threshold
+# TODO: Make the fabrication logs show on screen
 import math
 import os
 import random
@@ -195,7 +197,7 @@ class Dispenser:
 
         # Items
         self.stored_items = {"pale-air": 50, "pale-argon": 50, "pale-moss-swathe": 1,
-                             "light-bulb-fern-seed": 1, "pale-bush-seed": 1, "simple-recharger": 1}
+                             "light-bulb-fern-seed": 1, "pale-bush-seed": 1, "simple-recharger": 1, "energy-leaf": 50}
 
         # Items being fabricated
         self.fabricating_items = []
@@ -226,16 +228,19 @@ class Dispenser:
         self.d_pressed = 0
 
         # Currently selected
-        self.current_item = 0  # TODO: Rework this is the future to be a key instead of a index
-        self.current_recipe = 0
-        self.current_environment_recipe = 0
+        self.current_item = "pale-air"
+        self.current_recipe = "default:compress-energy-leaves"
+        self.current_environment_recipe = "default:default-environment"
         self.current_farm = 0
         self.farms_selection_selected = True
         self.farms_mode = "items"
 
         # Misc
         self.progress = 0  # How much the items have been processed on the shelf
+        self.shelf_movement_progress = 0  # Make the shelf ready itself at the same speed in lower fps
         self.arrow_hold_ticks = 100  # How long arrows hold down for
+        self.fabrication_logs = []  # Visual display of what got fabricated
+        self.log_duration = 8000
 
     def blit(self):
         # Blit every item on the shelf
@@ -264,16 +269,21 @@ class Dispenser:
         # Dispenser screen
         self.screen_blit()
 
+        #
+        self.blit_logs()
+
     def update(self):
         # Dispenser door
+        self.open = False
         if pressed_keys[pygame.K_SPACE] and dev_tools:
             self.open_ticks = 100
             self.open = True
-        else:
-            self.open = False
 
         # Process items
         self.progress += clock.get_time()
+
+        # Make the self work
+        self.shelf_movement_progress += clock.get_time()
 
         for item_ in self.shelf_items:
             if item_.progress >= 15:
@@ -285,12 +295,6 @@ class Dispenser:
                     item_list_pre = self.get_item_list()
 
                     self.stored_items[item_.name] = 1
-
-                    previous_item_name = item_list_pre[self.current_item]
-
-                    item_list_post = self.get_item_list()
-
-                    self.current_item = item_list_post.index(previous_item_name)
                 else:
                     # If the item has already been discovered (has an entry in storage)
                     self.stored_items[item_.name] += 1
@@ -304,16 +308,20 @@ class Dispenser:
         self.progress %= 100
 
         # Dispenser shelf
-        if player.rect.x >= 1000:
-            self.shelf_mode += 0.3
+        for _ in range(self.shelf_movement_progress // 17):
+            if player.rect.x >= 1000:
+                self.shelf_mode += 0.3
 
-            if self.shelf_mode > 3:
-                self.shelf_mode = 3
-        else:
-            self.shelf_mode -= 0.3
+                if self.shelf_mode > 3:
+                    self.shelf_mode = 3
+            else:
+                self.shelf_mode -= 0.3
 
             if self.shelf_mode < 0:
                 self.shelf_mode = 0
+
+        # Reset self.shelf_movement_progress
+        self.shelf_movement_progress %= 17
 
         # Force the shelf to be up it there are items
         if self.shelf_items:
@@ -342,6 +350,9 @@ class Dispenser:
         if self.screen_mode < 0:
             self.screen_mode = 0
 
+        # Fabrication logs
+        self.update_logs()
+
         # History
         if not self.history:
             self.history = ["unselected"]
@@ -357,7 +368,6 @@ class Dispenser:
     def switch_entry(self, entry):
         self.entry = entry
         self.history.append(entry)
-        # print(self.entry)
 
     def screen_blit(self):
         """Blit what's on the screen"""
@@ -393,10 +403,10 @@ class Dispenser:
             # Display the stored item
             if item_list:
                 # Normalise index
-                self.current_item %= len(item_list)
+                # self.current_item %= len(item_list)
 
                 # Item texture
-                item_image = items_register.item_image_ref[item_list[self.current_item]]
+                item_image = items_register.item_image_ref[self.current_item]
 
                 # Show the frame for the item
                 self.dispenser_screen.blit(item_frame_ref["top-left"], (4, 36))
@@ -409,7 +419,7 @@ class Dispenser:
                 self.dispenser_screen.blit(item_image, (12, 44))
 
                 # Show the amount of the item
-                amount = str(self.stored_items[item_list[self.current_item]]).split(".")
+                amount = str(self.stored_items[self.current_item]).split(".")
                 if len(amount) == 2:
                     amount[-1] = amount[-1][:3]
                     amount = ".".join(amount)
@@ -418,7 +428,7 @@ class Dispenser:
                     amount = amount[0]
 
                 for number_idx in range(len(amount)):
-                    number = str(self.stored_items[item_list[self.current_item]])[number_idx]
+                    number = str(self.stored_items[self.current_item])[number_idx]
                     self.dispenser_screen.blit(number_ref[number],
                                                (number_idx * 16,
                                                 52 + item_image.get_height()))
@@ -467,7 +477,7 @@ class Dispenser:
 
             # Current recipe
             self.dispenser_screen.blit(
-                recipe_manager.recipes[list(recipe_manager.recipes.keys())[self.current_recipe]]["blueprint"], (0, 0))
+                recipe_manager.recipes[self.current_recipe]["blueprint"], (0, 0))
 
             # Arrow keys
             if player.dispenser_selected:
@@ -520,7 +530,7 @@ class Dispenser:
         # Farms selected
         elif self.entry == "farms":
             # WIP
-            # TODO: Work on the accessing of the farms
+            # TODO: Work on the accessing of the farms [???]
             self.dispenser_screen.blit(self.assets.farms_entry, (0, 0))
             self.dispenser_screen.blit(self.assets.farm_selection, (0, 0))
 
@@ -534,14 +544,14 @@ class Dispenser:
 
             self.dispenser_screen.blit(self.assets.farms_frame_unlit, (4, 92))  # Items
 
-            if self.stored_items[item_list[self.current_item]] == 0 or not items_register.items_ref.get(
-                    item_list[self.current_item]).plantable:
+            if self.stored_items[self.current_item] == 0 or not items_register.items_ref.get(
+                    self.current_item).plantable:
                 self.dispenser_screen.blit(self.assets.farms_frame_red_x, (4, 92))
 
             if self.farms_mode == "items" and not self.farms_selection_selected:
                 self.dispenser_screen.blit(self.assets.farms_frame_lit, (4, 92))
 
-                if self.stored_items[item_list[self.current_item]] == 0:
+                if self.stored_items[self.current_item] == 0:
                     self.dispenser_screen.blit(self.assets.farms_frame_red_x, (4, 92))
 
             self.dispenser_screen.blit(self.assets.farms_frame_unlit, (84, 92))  # Environment
@@ -552,10 +562,10 @@ class Dispenser:
             item_display_rect.x = 4
             item_display_rect.y = 92
 
-            item_rect = items_register.item_image_ref[item_list[self.current_item]].get_rect()
+            item_rect = items_register.item_image_ref[self.current_item].get_rect()
             item_rect.center = [round(item_display_rect.center[0] / 4) * 4, round(item_display_rect.center[1] / 4) * 4]
 
-            self.dispenser_screen.blit(items_register.item_image_ref[item_list[self.current_item]], item_rect)
+            self.dispenser_screen.blit(items_register.item_image_ref[self.current_item], item_rect)
             del item_list
             del item_rect
             del item_display_rect
@@ -575,7 +585,7 @@ class Dispenser:
             environments.sort()
 
             self.dispenser_screen.blit(
-                environment_recipe_manager.recipes[environments[self.current_environment_recipe]]["blueprint"], (0, 0))
+                environment_recipe_manager.recipes[self.current_environment_recipe]["blueprint"], (0, 0))
 
             if self.frame_lit_ticks > 0:
                 self.dispenser_screen.blit(self.assets.lit_environment_frame, (0, 0))
@@ -606,7 +616,13 @@ class Dispenser:
                 # Arrow symbols
                 if pressed_keys[pygame.K_a] and player.a_ready:
                     self.a_pressed = self.arrow_hold_ticks
-                    self.current_item -= 1
+
+                    # Go back one item
+                    item_list = self.get_item_list()
+                    item_idx = item_list.index(self.current_item)
+                    item_idx = (item_idx - 1 + len(item_list)) % len(item_list)
+
+                    self.current_item = item_list[item_idx]
 
                     # "switch.mp4" sound effect
                     SFXDispenser.switch.play()
@@ -622,7 +638,16 @@ class Dispenser:
 
                 if pressed_keys[pygame.K_d] and player.d_ready:
                     self.d_pressed = self.arrow_hold_ticks
-                    self.current_item += 1
+
+                    # Go forwards one item
+                    item_list = self.get_item_list()
+                    item_idx = item_list.index(self.current_item)
+                    item_idx = (item_idx + 1) % len(item_list)
+
+                    self.current_item = item_list[item_idx]
+
+                    # "switch.mp4" sound effect
+                    SFXDispenser.switch.play()
 
                     # "switch.mp4" sound effect
                     SFXDispenser.switch.play()
@@ -643,20 +668,20 @@ class Dispenser:
 
                     # If there are items...
                     # print(items_register.items_ref[item_list[self.current_item]].dispensable)
-                    if item_list and items_register.items_ref[item_list[self.current_item]].dispensable:
+                    if item_list and items_register.items_ref[self.current_item].dispensable:
                         # Get the class of the current item
-                        item_class = items_register.items_ref[item_list[self.current_item]]
+                        item_class = items_register.items_ref[self.current_item]
 
                         # Get a random x value to spawn the item at
-                        if 1340 - items_register.item_image_ref[item_list[self.current_item]].get_width() >= 1220:
-                            x_ = random.randint(1220, 1340 - items_register.item_image_ref[
-                                item_list[self.current_item]].get_width())
+                        if 1340 - items_register.item_image_ref[self.current_item].get_width() >= 1220:
+                            x_ = random.randint(1220,
+                                                1340 - items_register.item_image_ref[self.current_item].get_width())
                         else:
                             x_ = 1220
 
                         # New item object
-                        new_item = item_class(x_, 516 - items_register.item_image_ref[
-                            item_list[self.current_item]].get_height(), True)
+                        new_item = item_class(x_, 516 - items_register.item_image_ref[self.current_item].get_height(),
+                                              True)
 
                         # If the player has at least one of the item...
                         if self.stored_items[new_item.name] >= 1:
@@ -668,6 +693,7 @@ class Dispenser:
 
                             # Open the dispenser
                             self.open_ticks = 500
+                            self.open = True
 
                             # Play SFX
                             SFXDispenser.select.play()
@@ -684,7 +710,11 @@ class Dispenser:
 
                 if pressed_keys[pygame.K_a] and player.a_ready:
                     self.a_pressed = self.arrow_hold_ticks
-                    self.current_recipe -= 1
+                    recipe_ids = list(recipe_manager.recipes.keys())
+
+                    self.current_recipe = recipe_ids[
+                        (recipe_ids.index(self.current_recipe) - 1 + len(recipe_ids)) % len(
+                            recipe_ids)]
                     SFXDispenser.switch.play()
 
                 elif pressed_keys[pygame.K_a] and not player.a_ready:
@@ -698,7 +728,9 @@ class Dispenser:
 
                 if pressed_keys[pygame.K_d] and player.d_ready:
                     self.d_pressed = self.arrow_hold_ticks
-                    self.current_recipe += 1
+                    recipe_ids = list(recipe_manager.recipes.keys())
+                    self.current_recipe = recipe_ids[(recipe_ids.index(self.current_recipe) + 1) % len(recipe_ids)]
+
                     SFXDispenser.switch.play()
 
                 elif pressed_keys[pygame.K_d] and not player.d_ready:
@@ -712,7 +744,7 @@ class Dispenser:
 
                 # Fabricate a item
                 if pressed_keys[pygame.K_k] and k_ready:
-                    item_recipe = recipe_manager.recipes[list(recipe_manager.recipes.keys())[self.current_recipe]]
+                    item_recipe = recipe_manager.recipes[self.current_recipe]
 
                     enough_materials = True
                     for item_required in item_recipe["input"]:
@@ -797,9 +829,9 @@ class Dispenser:
                     item_list = self.get_item_list()
                     # print(items_register.items_ref[item_list_[self.current_item]], "start")
                     #
-                    current_item_ = items_register.items_ref[item_list[self.current_item]]
+                    current_item_ = items_register.items_ref[self.current_item]
                     #
-                    if current_item_.plantable and self.stored_items[item_list[self.current_item]] >= 1:
+                    if current_item_.plantable and self.stored_items[self.current_item] >= 1:
                         current_farm = [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][self.current_farm]
                         new_plant_class = plants_register.plant_ref[current_item_.plant]
                         new_plant = new_plant_class(current_farm.x + random.randint(0, 196) // 4 * 4,
@@ -807,7 +839,7 @@ class Dispenser:
 
                         current_farm.add_plant(new_plant)
 
-                        self.stored_items[item_list[self.current_item]] -= 1
+                        self.stored_items[self.current_item] -= 1
 
                 # item_list__ = self.get_item_list()
 
@@ -828,18 +860,25 @@ class Dispenser:
 
                     current_environment = [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][
                         self.current_farm].environment
-                    self.current_environment_recipe = environments.index(
-                        [environment_recipe_manager.recipes[recipe] for recipe in environments if
-                         environment_recipe_manager.recipes[recipe]["environment"] == current_environment][0]["id"])
+
+                    environment_recipes = environment_recipe_manager.recipes
+
+                    self.current_environment_recipe = [environment for environment in environment_recipes.keys()
+                                                       if environment_recipes[environment]["environment"] ==
+                                                       current_environment][0]
 
                     SFXDispenser.select.play()
-
 
             elif self.entry == "environment":
                 # Environment selection
                 if pressed_keys[pygame.K_a] and player.a_ready:
                     self.a_pressed = self.arrow_hold_ticks
-                    self.current_environment_recipe -= 1
+                    environment_recipies = list(environment_recipe_manager.recipes.keys())
+
+                    self.current_environment_recipe = environment_recipies[
+                        (environment_recipies.index(self.current_environment_recipe) - 1
+                         + len(environment_recipies)) % len(environment_recipies)]
+
                     self.frame_lit_ticks = 0
 
                     SFXDispenser.switch.play()
@@ -856,7 +895,10 @@ class Dispenser:
 
                 if pressed_keys[pygame.K_d] and player.d_ready:
                     self.d_pressed = self.arrow_hold_ticks
-                    self.current_environment_recipe += 1
+                    environment_recipies = list(environment_recipe_manager.recipes.keys())
+
+                    self.current_environment_recipe = environment_recipies[(environment_recipies.index(
+                        self.current_environment_recipe) + 1) % len(environment_recipies)]
                     self.frame_lit_ticks = 0
 
                     SFXDispenser.switch.play()
@@ -873,28 +915,32 @@ class Dispenser:
 
                 # Selection a environment
                 if pressed_keys[pygame.K_k] and k_ready:
+                    # How long the frame is lit
                     self.frame_lit_ticks = self.frame_lit_duration
 
+                    # Get all the environments
                     environments = list(environment_recipe_manager.recipes.keys())
                     environments.sort()
 
-                    current_selected_environment = \
-                        environment_recipe_manager.recipes[environments[self.current_environment_recipe]]["environment"]
+                    # Modify the environment
+                    current_environment = environment_recipe_manager.recipes[self.current_environment_recipe][
+                        "environment"]
 
                     [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][
-                        self.current_farm].environment = current_selected_environment
+                        self.current_farm].environment = current_environment
+
+                    # Readd the effects
                     [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][self.current_farm].effects_added = False
 
                     SFXDispenser.select.play()
 
         # Make the current variables rotate when it goes to low or too high
-        if self.stored_items.keys():
-            self.current_item %= len(self.stored_items.keys())
+        # if self.stored_items.keys():
+        #     self.current_item %= len(self.stored_items.keys())
 
         # Prevent the index from going above the limit
-        self.current_recipe %= len(recipe_manager.recipes.keys())
         self.current_farm %= 4
-        self.current_environment_recipe %= len(environment_recipe_manager.recipes.keys())
+        # self.current_environment_recipe %= len(environment_recipe_manager.recipes.keys())
 
         # Process an item
         for item_ in range(len(self.fabricating_items)):
@@ -934,11 +980,15 @@ class Dispenser:
                             if type(selected_output[new_item]) == list:
                                 amount = random.randint(selected_output[new_item][0], selected_output[new_item][1])
 
+                                self.add_log(new_item, amount)
+
                                 if self.stored_items.get(new_item):
                                     self.stored_items[new_item] += amount
                                 else:
                                     self.stored_items[new_item] = amount
                             else:
+                                self.add_log(new_item, selected_output[new_item])
+
                                 if self.stored_items.get(new_item):
                                     self.stored_items[new_item] += selected_output[new_item]
                                 else:
@@ -1015,6 +1065,98 @@ class Dispenser:
 
         return item_list
 
+    def add_log(self, fabricated_item, amount):
+        """
+        :param fabricated_item: What item should be listed
+        :param amount: How much of the item should be listed
+        """
+
+        """
+        item: the item
+        multiplier: how many items
+        time: how long the log will last
+        fade: should the log fade in
+        """
+        log_exists = False
+        for log in self.fabrication_logs:
+            if log["item"] == fabricated_item:
+                log["multiplier"] += amount
+
+                if log["time"] >= 5000 and log["fade"]:
+                    log["fade"] = True
+                else:
+                    log["time"] = self.log_duration
+                    log["fade"] = False
+                log_exists = True
+                break
+
+        if not log_exists:
+            self.fabrication_logs.append(
+                {"item": fabricated_item, "multiplier": amount, "time": self.log_duration, "fade": True})
+
+    def update_logs(self):
+        for log in self.fabrication_logs:
+            log["time"] -= clock.get_time()
+
+        for log_idx in range(len(self.fabrication_logs)):
+            if self.fabrication_logs[log_idx]["time"] <= 0:
+                self.fabrication_logs[log_idx] = "removed"
+
+        while "removed" in self.fabrication_logs:
+            self.fabrication_logs.remove("removed")
+
+        while len(self.fabrication_logs) > 5:
+            self.fabrication_logs = self.fabrication_logs[1:]
+
+    def blit_logs(self):
+        message = pygame.surface.Surface((0, 0), pygame.SRCALPHA)
+        for log in self.fabrication_logs:
+            item_name = items_register.get_translation(log['item']).lower()
+
+            text_ = Fonts.default_font.render(f"Fabricated {item_name} X {log['multiplier']}", False, "#FFFFFF")
+            message = pygame.surface.Surface(({True: text_.get_width(), False: message.get_width()}
+                                              [text_.get_width() > message.get_width() - 8],
+                                              message.get_height() + 36), pygame.SRCALPHA)
+
+        for log_idx in range(len(self.fabrication_logs)):
+            log = self.fabrication_logs[log_idx]
+            item_name = items_register.get_translation(log['item']).lower()
+
+            fabrication_text = Fonts.default_font.render(f"Fabricated", False, "#151518")
+
+            # TODO: Considier adding more customisation to the colours (Yes considier is spelt like that now)
+            item_text = Fonts.default_font.render(f" {item_name}", False, "#151518")
+
+            multiplier_text = Fonts.default_font.render(f" X {log['multiplier']}", False, "#FFFF00")
+
+            text_ = pygame.surface.Surface(
+                (fabrication_text.get_width() + item_text.get_width() + multiplier_text.get_width(),
+                 fabrication_text.get_height()),
+                pygame.SRCALPHA)
+
+            # Fade in and out
+            if log["time"] - (self.log_duration - 1000) >= 0 and log["fade"]:
+                alpha = -(log["time"] - self.log_duration) * (255 / 1000)
+                fabrication_text.set_alpha(alpha)
+                item_text.set_alpha(alpha)
+                multiplier_text.set_alpha(alpha)
+            elif log["time"] <= 1000:
+                alpha = log["time"] * (255 / 1000)
+                fabrication_text.set_alpha(alpha)
+                item_text.set_alpha(alpha)
+                multiplier_text.set_alpha(alpha)
+
+            text_.blit(fabrication_text, (0, 0))
+            text_.blit(item_text, (fabrication_text.get_width(), 0))
+            text_.blit(multiplier_text, (fabrication_text.get_width() + item_text.get_width(), 0))
+
+            message.blit(text_, (message.get_width() / 2 - text_.get_width() / 2, 4 + log_idx * 36))
+
+        message_rect = message.get_rect()
+        message_rect.bottom = overlay.get_height() - 4
+        message_rect.right = overlay.get_width() - 8
+        overlay.blit(message, message_rect)
+
 
 # Generator class
 class Generator:
@@ -1024,13 +1166,19 @@ class Generator:
         self.rect = self.assets.generator_default.get_rect()
         self.rect.x = 20
         self.rect.y = 200
-        self.electricity = 100  # Max is 125
+        self.electricity = 40  # Max is 50
+
+        self.input_mode = 0
+
+        self.fuel_que = []
+        self.input_progress = 0
+        self.fuel_progress = 0
 
     def blit(self):
         distance = abs(self.rect.center[0] - player.rect.x)
 
         # Change the volume based on the current electricity and distance from the player
-        volume = self.electricity / (500 * 1.25)
+        volume = self.electricity / (500 * 0.5)
         volume -= distance / 2000
 
         # Cap the volume (I don't know if this is needed, pygame-CE might catch)
@@ -1054,7 +1202,7 @@ class Generator:
 
         # I am dying inside :)
         for _ in range(4):
-            if random.random() <= self.electricity / (2000 * 1.25):
+            if random.random() <= self.electricity / (2000 * 0.5):
                 angle = random.randint(0, 360)
 
                 adjacent = math.cos(angle) * 20
@@ -1065,10 +1213,10 @@ class Generator:
                 SFXDispenser.zap.play()
 
         # Draw a circle with decreasing size from the maximum size based on the electricity
-        for i_ in range(int(self.electricity // 12.5) + 1):
+        for i_ in range(int(self.electricity // 5) + 1):
             pygame.draw.circle(energy_orb, (135 + r_change * i_, 206 + g_change * i_, 255 + b_change * i_),
                                (12, 13),
-                               int(self.electricity) // 12.5 - i_ + 1)
+                               int(self.electricity) // 5 - i_ + 1)
 
         # b4e0fc (225, 242, 254)  +90, +36, -1
 
@@ -1077,21 +1225,31 @@ class Generator:
 
         # Random orb jitter
         orb_shift = [0, 0]
-        if random.random() <= self.electricity / (7500 * 1.25):
+        if random.random() <= self.electricity / (7500 * 0.5):
             orb_shift[0] += random.choice([-4, 4])
-            if self.electricity >= (75 * 1.25) and random.random() <= self.electricity / (10000 * 1.25):
+            if self.electricity >= (75 * 0.5) and random.random() <= self.electricity / (10000 * 0.5):
                 orb_shift[0] += (orb_shift[0] / abs(orb_shift[0])) * 8
 
-        if random.random() <= self.electricity / (7500 * 1.25):
+        if random.random() <= self.electricity / (7500 * 0.5):
             orb_shift[1] += random.choice([-4, 4])
-            if self.electricity >= (75 * 12.5) and random.random() <= self.electricity / (10000 * 1.25):
+            if self.electricity >= (75 * 12.5) and random.random() <= self.electricity / (10000 * 0.5):
                 orb_shift[1] += (orb_shift[1] / abs(orb_shift[1])) * 8
 
         # Blit the orb
         centered_display.blit(energy_orb, (36 + orb_shift[0], 436 + orb_shift[1]))
 
+        # Blit the fuel
+        for fuel in self.fuel_que:
+            centered_display.blit(fuel[0].image, (fuel[1], 368 - fuel[2]))
+
         # Blit the generator
         centered_display.blit(self.assets.generator_default, self.rect)
+
+        # Blit the input
+        if self.input_mode >= 2:
+            centered_display.blit(self.assets.generator_input_2, self.rect)
+        elif self.input_mode >= 1:
+            centered_display.blit(self.assets.generator_input_1, self.rect)
 
     def update(self):
         global mode
@@ -1099,17 +1257,66 @@ class Generator:
         # Deduct the electricity
         self.electricity -= clock.get_time() / 24000
 
+        self.input_progress += clock.get_time()
+        self.fuel_progress += clock.get_time()
+
         # Cap the electricity
         if self.electricity < 0:
             self.electricity = 0
             mode = "lose"
 
-        elif self.electricity >= 125:
-            self.electricity = 125
+        elif self.electricity >= 50:
+            self.electricity = 50
             mode = "win"
 
+        # Make the input go up and down
+        for _ in range(self.input_progress // 17):
+            if player.rect.x <= 190:
+                self.input_mode += 0.3
+            else:
+                self.input_mode -= 0.3
 
-# Farms class-
+        # Cap the input
+        if self.input_mode < 0:
+            self.input_mode = 0
+
+        elif self.input_mode > 2:
+            self.input_mode = 2
+
+        # Processes the items
+        for _ in range(self.fuel_progress // 100):
+            for item_idx in range(len(self.fuel_que)):
+                # Send the items down
+                self.fuel_que[item_idx][2] -= 4
+
+                # Cut the image to prevent it from tipping into the machine when displayed
+                new_image = pygame.surface.Surface(
+                    (self.fuel_que[item_idx][0].image.get_width(), self.fuel_que[item_idx][0].image.get_height() - 4),
+                    pygame.SRCALPHA)
+
+                new_image.blit(self.fuel_que[item_idx][0].image, (0, 0))
+
+                self.fuel_que[item_idx][0].image = new_image
+
+                # Use the item for fuel when it gets fully processed
+                if self.fuel_que[item_idx][2] <= 0:
+                    self.fuel_que[item_idx][0].fuel(generator)
+                    self.fuel_que[item_idx] = ""
+
+            # Remove the used items
+            while "" in self.fuel_que:
+                self.fuel_que.remove("")
+
+        # Lock the input mode when there is a item
+        if self.fuel_que:
+            self.input_mode = 2
+
+        # Refactor/modulo the update timers
+        self.fuel_progress %= 100
+        self.input_progress %= 17
+
+
+# Farms class
 class Farms:
     def __init__(self):
         # Farm creation
@@ -1195,7 +1402,6 @@ class Farms:
         if self.progress:
             for _ in range(int(self.progress // FARM_UPDATE_TICKS)):
                 for farm_object in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
-                    # TODO: Figure out why the ghost of the plants are haunting me (still generating gas even when dead)
                     # Get the required items for the current environments
                     environment_req = \
                         [environment_recipe_manager.recipes[environment]["input"] for environment in
@@ -1216,6 +1422,9 @@ class Farms:
                         else:
                             farm_object.environment_items[gas] = farm_object.provided_items[gas]
 
+                    # Reset the provided items
+                    farm_object.provided_items = {}
+
                     # Force the environment minimum
                     for gas in environment_req.keys():
                         gas_amount = farm_object.environment_items.get(gas, 0)  # The amount in the environment
@@ -1229,7 +1438,6 @@ class Farms:
 
                     # Evaluate the gases needed by the flora
                     for plant_ in farm_object.plants:
-                        print("updated")
                         plant_.evaluate_input(farm_object)
 
                     # Collect any remaining overload gases
@@ -1322,7 +1530,7 @@ class Player:
         # Assets
         self.assets = PlayerAssets
 
-        #
+        # Allow the player to still move the same amount in lower FPS's
         self.movement_ms = 0
 
         # Variables
@@ -1394,25 +1602,18 @@ class Player:
 
     def update(self, keyboard):
         # Allow the player to still move the same amount in lower FPS's
-        if clock.get_fps() < 55:
-            self.movement_ms += clock.get_time()
+        self.movement_ms += clock.get_time()
 
-        if self.movement_ms // (1000 / 240) >= 1 or clock.get_fps() >= 55:
+        if self.movement_ms // (1000 / 240) >= 1:
             if not self.dispenser_selected:
                 # Movement
                 if keyboard[pygame.K_a] and not keyboard[pygame.K_d]:
                     self.direction = "left"
-                    if clock.get_fps() < 55:
-                        self.rect.x -= (round(240 * (self.movement_ms / 1000) / 4) * 4) // 4 * 4
-                    else:
-                        self.rect.x -= 4
+                    self.rect.x -= (round(240 * (self.movement_ms / 1000) / 4) * 4) // 4 * 4
 
                 if keyboard[pygame.K_d] and not keyboard[pygame.K_a]:
                     self.direction = "right"
-                    if clock.get_fps() < 55:
-                        self.rect.x += (round(240 * (self.movement_ms / 1000) / 4) * 4) // 4 * 4
-                    else:
-                        self.rect.x += 4
+                    self.rect.x += (round(240 * (self.movement_ms / 1000) / 4) * 4) // 4 * 4
 
                 # Prevent the player from going out of bounds
                 if self.rect.x > 1316:
@@ -1431,17 +1632,25 @@ class Player:
                     self.items = self.items[:-1]
 
                 # Fueling the generator with the item
-                elif player.rect.x <= 190 and self.items[-1].fuel(generator):
+                elif player.rect.x <= 190:
+                    fuel = copy.deepcopy(self.items[-1])
+                    generator.fuel_que.append([fuel, random.randint(60, 128 - fuel.image.get_width()) // 4 * 4,
+                                               fuel.image.get_height()])
+
                     self.items = self.items[:-1]
 
                 # Fueling the generator with the item
-                elif player.rect.x <= 190 and self.items[0].fuel(generator):
+                elif player.rect.x <= 190:
+                    fuel = copy.deepcopy(self.items[-1])
+                    generator.fuel_que.append([fuel, random.randint(60, 128 - fuel.image.get_width()) // 4 * 4,
+                                               fuel.image.get_height()])
+
                     self.items = self.items[-1:]
 
                 # Drop the item
                 else:
                     # if len(self.items) < 2:
-                        # item_rect = self.items[-1].image.get_rect()
+                    # item_rect = self.items[-1].image.get_rect()
 
                     self.items[-1].rect.center = self.rect.center
                     self.items[-1].rect.bottom = self.rect.top
@@ -1504,6 +1713,12 @@ class Player:
 
             if keyboard[pygame.K_EQUALS]:
                 self.electricity += 0.25
+
+            if keyboard[pygame.K_LEFTBRACKET]:
+                generator.electricity -= 0.25
+
+            if keyboard[pygame.K_RIGHTBRACKET]:
+                generator.electricity += 0.25
 
         # Cap the electricity
         if self.electricity > 25:
@@ -1857,19 +2072,30 @@ while True:
 
             # Unused stuff
             if not glitch_effects:
-                if player.electricity < 5:
-                    hex_opacity = hex(int(200 - (player.electricity * 51)))[2:]
+                if generator.electricity < 25:
+                    hex_opacity = hex(int((255 * 5 - (generator.electricity * 51)) / 5))[2:]
 
                     if len(hex_opacity) == 1:
                         hex_opacity = "0" + hex_opacity
 
-                    elif (200 - (player.electricity * 51)) < 0:
+                    elif (200 * 5 - (generator.electricity * 51)) < 0:
                         hex_opacity = "00"
 
                     elif len(hex_opacity) == 3:
                         hex_opacity = "FF"
 
-                    overlay.fill("#000000" + hex_opacity)
+                    # Copy the overlay to prevent the electricity bar from being overridden
+                    low_energy_tint = overlay.copy()
+
+                    # Perform the tint
+                    low_energy_tint.fill("#000000" + hex_opacity)
+
+                    # Set the overlay to be on top of the tint (and the tint to be on top of everything else)
+                    low_energy_tint.blit(overlay, (0, 0))
+                    overlay = low_energy_tint
+
+                    # Delete to prevent python from doing random stuff with it
+                    del low_energy_tint
 
             elif glitch_effects and not enhanced_glitch_effects:
                 pass
@@ -1907,11 +2133,23 @@ while True:
 
     elif mode == "win":
         screen.fill("#000000")
-        title = Fonts.default_font.render("You won", False, "#FFFFFF")
+        win_title = Fonts.default_font.render("You won", False, "#FFFFFF")
         desc1 = Fonts.default_font.render(
             "There isn't a actual ending yet this is just a placeholder for getting your generator to \n max energy",
             False, "#FFFFFF")
-        desc2 = Fonts.default_font.render("Thank you for playing", False, "#FFFFFF")
+        desc2 = Fonts.default_font.render("Press spacebar to exit to menu\nThank you for playing", False, "#FFFFFF")
+
+        holograms = Holograms()
+        dispenser = Dispenser()
+        generator = Generator()
+        farms = Farms()
+        player = Player()
+
+        items_register.items = []
+        items = []
+
+        if pressed_keys[pygame.K_SPACE]:
+            mode = "menu"
 
         centered_display.blit(title, (4, 4))
         centered_display.blit(desc1, (4, 36))
@@ -1919,12 +2157,26 @@ while True:
 
 
     elif mode == "lose":
+        paused = False
+
         screen.fill("#000000")
-        title = Fonts.default_font.render("You lost", False, "#FFFFFF")
-        desc1 = Fonts.default_font.render("There inset a restart button yet, close and reopen the game to play again",
+        lose_title = Fonts.default_font.render("You lost", False, "#FFFFFF")
+        desc1 = Fonts.default_font.render("Press spacebar to exit to menu",
                                           False, "#FFFFFF")
 
-        centered_display.blit(title, (4, 4))
+        holograms = Holograms()
+        dispenser = Dispenser()
+        generator = Generator()
+        farms = Farms()
+        player = Player()
+
+        items_register.items = []
+        items = []
+
+        if pressed_keys[pygame.K_SPACE]:
+            mode = "menu"
+
+        centered_display.blit(lose_title, (4, 4))
         centered_display.blit(desc1, (4, 36))
 
     # Mouse lifted
@@ -1957,27 +2209,32 @@ while True:
     else:
         esc_ready = True
 
-    if pressed_keys[pygame.K_f] or True:
-        # TODO: finish [???]
-        # Finish what
-        fps = str(int(clock.get_fps()))
-        fps_text = Fonts.default_font.render(fps, False, "#151518")
-        screen.blit(fps_text, (4, screen.get_height() - 92))
+    # FPS counter
+    fps = str(int(clock.get_fps()))
+    fps_text = Fonts.default_font.render(fps, False, "#151518")
+    screen.blit(fps_text, (4, screen.get_height() - 92))
+
+    # Repurposed this for debugging/testing that doesn't include loging
+    if pressed_keys[pygame.K_f] and True:
+        dispenser.add_log("item", 1)
+        dispenser.add_log("test item2 )", 1)
+        dispenser.add_log("test item3 )", 1)
+        dispenser.add_log("test item4 )", 1)
+        dispenser.add_log("test item5 )", 1)
+        # Use this to check if every item is translated
+        # file = json.load(open(os.path.join("assets", "translations", "items.json")))
+        # list_ = list(items_register.items_ref.keys())
+        # for translation in file.keys():
+        #     if translation in list_:
+        #         list_.remove(translation)
+        #
+        # print(list_)
 
     # Debugging
-    if pressed_keys[pygame.K_f]:
-        print("Loging!")
-        # item_list = dispenser.stored_items
-        # print(item_list)
-        # print(farms.farm_1)
-        # print(item_list)
-        # print()
-        # print(farms.farm_1.environment_items)
-        # print(generator.electricity)
-
+    if pressed_keys[pygame.K_f] and dev_tools:
         text = Fonts.default_font.render("Loging info!", False, (0, 0, 0))
-        print("f", Fonts.default_font.get_height())
         centered_display.blit(text, (700 - text.get_width() / 2, 4))
+        # print("AAAA", len(items_register.items_ref.keys()))
 
         # del item_list
 

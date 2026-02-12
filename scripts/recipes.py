@@ -1,5 +1,7 @@
 import os
 import json
+from os import close
+
 import pygame
 from scripts.logger import log_error
 

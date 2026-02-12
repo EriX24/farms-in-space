@@ -3,5 +3,7 @@
     "default:pale-dirt",
     "default:pale-environment-mist",
     "default:pale-clouds"
-  ]
+  ],
+
+  "environment": "default:pale"
 }

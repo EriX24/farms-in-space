@@ -51,8 +51,10 @@ class ItemAssets:
     purified_lightbulb_fern_orb = pygame.image.load(
         os.path.join("assets", "items", "purified-lightbulb-fern-orb.png")).convert_alpha()
     recharger = pygame.image.load(os.path.join("assets", "items", "recharger", "recharger.png")).convert_alpha()
-    recharger_2left = pygame.image.load(os.path.join("assets", "items", "recharger", "recharger-2left.png")).convert_alpha()
-    recharger_1left = pygame.image.load(os.path.join("assets", "items", "recharger", "recharger-1left.png")).convert_alpha()
+    recharger_2left = pygame.image.load(
+        os.path.join("assets", "items", "recharger", "recharger-2left.png")).convert_alpha()
+    recharger_1left = pygame.image.load(
+        os.path.join("assets", "items", "recharger", "recharger-1left.png")).convert_alpha()
     depleted_recharger = pygame.image.load(os.path.join("assets", "items", "depleted-recharger.png")).convert_alpha()
 
     # Plant assets
@@ -233,6 +235,12 @@ class GeneratorAssets:
     # Generator assets
     generator_default = pygame.image.load(
         os.path.join("assets", "generator", "environment", "generator-default.png")).convert_alpha()
+
+    generator_input_1 = pygame.image.load(
+        os.path.join("assets", "generator", "environment", "generator-input-1.png")).convert_alpha()
+
+    generator_input_2 = pygame.image.load(
+        os.path.join("assets", "generator", "environment", "generator-input-2.png")).convert_alpha()
 
 
 class RoomAssets:

@@ -8,5 +8,5 @@
     "pale-argon": 0.02
   },
 
-  "environment": "pale"
+  "environment": "default:pale"
 }

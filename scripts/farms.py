@@ -25,7 +25,7 @@ class Farm:
         self.plants = []
 
         # The default environment
-        self.environment = "default"
+        self.environment = "default:default"
 
         # Gases provided by the plants
         self.provided_items = {}
@@ -65,6 +65,7 @@ class Farm:
 
         # Update each effect
         for effect in self.effects:
+            # print(effect)
             effect.update(player, pressed_keys, pickup_ready, self)
 
     def add_effects(self):

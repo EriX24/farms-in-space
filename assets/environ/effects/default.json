@@ -1,5 +1,7 @@
 {
   "effects": [
     "default:dirt"
-  ]
+  ],
+
+  "environment": "default:default"
 }

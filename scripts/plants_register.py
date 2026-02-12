@@ -151,17 +151,7 @@ class PaleBushPlant(Plant):
 
         # Add the energy leaf entry if it hasn't been discovered yet
         if not dispenser.stored_items.get("energy-leaf"):
-            item_list = list(dispenser.stored_items.keys())
-            item_list.sort()
-
-            current_item = item_list[dispenser.current_item]
-
             dispenser.stored_items["energy-leaf"] = 0
-
-            item_list = list(dispenser.stored_items.keys())
-            item_list.sort()
-
-            dispenser.current_item = item_list.index(current_item)
 
         # Cap the cooldown to prevent pale moss from throwing it into the negetives
         if self.generate_cooldown <= 0:
@@ -173,21 +163,7 @@ class PaleBushPlant(Plant):
 
         # Grow pale bush seeds
         for _ in range(int(self.seed_timer // self.SEED_COOLDOWN)):
-            if not dispenser.stored_items.get("pale-bush-seed"):
-                # Add the pale bush seed entry if it doesn't already exist
-                item_list = list(dispenser.stored_items.keys())
-                item_list.sort()
-
-                current_item = item_list[dispenser.current_item]
-
-                dispenser.stored_items["pale-bush-seed"] = 1
-
-                item_list = list(dispenser.stored_items.keys())
-                item_list.sort()
-
-                dispenser.current_item = item_list.index(current_item)
-            else:
-                dispenser.stored_items["pale-bush-seed"] += 1
+            dispenser.stored_items["pale-bush-seed"] = dispenser.stored_items.get("pale-bush-seed", 0) + 1
 
         # 160.19 is the width
 
@@ -432,21 +408,8 @@ class LightBulbFern(Plant):
 
         # Grow light bulb fern seeds
         for _ in range(self.seed_timer // self.seed_cooldown):
-            if not dispenser.stored_items.get("light-bulb-fern-seed"):
-                # Add the light bulb fern seed entry if it doesn't exist
-                item_list = list(dispenser.stored_items.keys())
-                item_list.sort()
-
-                current_item = item_list[dispenser.current_item]
-
-                dispenser.stored_items["light-bulb-fern-seed"] = 1
-
-                item_list = list(dispenser.stored_items.keys())
-                item_list.sort()
-
-                dispenser.current_item = item_list.index(current_item)
-            else:
-                dispenser.stored_items["light-bulb-fern-seed"] += 1
+            # Add the light bulb fern seed entry if it doesn't exist
+            dispenser.stored_items["light-bulb-fern-seed"] = dispenser.stored_items.get("light-bulb-fern-seed") + 1
 
         # Reset the timers
         self.seed_timer %= self.seed_cooldown
@@ -608,12 +571,10 @@ class LightBulbFern(Plant):
             self.bulb_positions.remove("")
 
             # Add the light bulb fern orb entry if it hasn't been discovered yet
-            if self.dispenser_ref.stored_items.get("lightbulb-fern-orb"):
-                self.dispenser_ref.stored_items["lightbulb-fern-orb"] += 1
-            else:
-                self.dispenser_ref.stored_items["lightbulb-fern-orb"] = 1
+            self.dispenser_ref.stored_items["lightbulb-fern-orb"] = self.dispenser_ref.stored_items.get(
+                "lightbulb-fern-orb", 0) + 1
 
-        # Loop through the branches
+            # Loop through the branches
         for branch_idx in range(len(self.branch_positions)):
             # Move the branches down
             self.branch_positions[branch_idx][1] += 4
@@ -733,21 +694,7 @@ class PaleMoss(Plant):
 
         # Grow pale moss swathes
         for _ in range(self.seed_timer // self.SEED_COOLDOWN):
-            if not dispenser.stored_items.get("pale-moss-swathe"):
-                # Add the pale moss swathe entry if it hasn't been discovered yet
-                item_list = list(dispenser.stored_items.keys())
-                item_list.sort()
-
-                current_item = item_list[dispenser.current_item]
-
-                dispenser.stored_items["pale-moss-swathe"] = 1
-
-                item_list = list(dispenser.stored_items.keys())
-                item_list.sort()
-
-                dispenser.current_item = item_list.index(current_item)
-            else:
-                dispenser.stored_items["pale-moss-swathe"] += 1
+            dispenser.stored_items["pale-moss-swathe"] = dispenser.stored_items.get("pale-moss-swathe") + 1
 
         # Reset the timers
         self.shift_increment_timer %= self.SHIFT_INCREMENT_COOLDOWN
