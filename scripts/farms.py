@@ -63,7 +63,7 @@ class Farm:
         if not self.effects_added:
             self.add_effects()
 
-        remove_invalid_effects = False
+        remove_invalid_effects = True
 
         # Update each effect
         for effect in self.effects:
@@ -71,9 +71,7 @@ class Farm:
             if effect.__class__ in effects.values():
                 effect.update(player, pressed_keys, pickup_ready, self)
 
-            else:
-                remove_invalid_effects = True
-
+        # Remove invalid effects
         while remove_invalid_effects:
             invalid_entry_remaining = False
             for effect in self.effects:

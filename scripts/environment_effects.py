@@ -50,9 +50,6 @@ class Dirt:
     def __init__(self):
         self.opacity = 0
 
-        # How long before the dirt is removed
-        self.destruct_cd = 0
-
         # Copy the image to avoid referencing the same data in memory and messing this up
         self.image = FarmAssets.dirt.copy()
 
@@ -69,18 +66,17 @@ class Dirt:
             if effect.__class__ == self.__class__:
                 effect_count += 1
 
-        if effect_count >= 2 and self.destruct_cd <= 0:
-            farm.effects.remove(self)
+        if effect_count > 1 and self.opacity <= 0:
+            farm.effects[farm.effects.index(self)] = ""
+            return
 
-        if farm.environment == "default:default":
-            self.destruct_cd = 255
-        else:
-            if self.destruct_cd <= 0:
-                farm.effects.remove(self)
+        if self.opacity < 255 and farm.environment == "default:default":
+            self.opacity += 3
+        elif farm.environment != "default:default":
+            if self.opacity <= 0:
+                farm.effects[farm.effects.index(self)] = ""
 
-            self.destruct_cd -= 3
-
-        self.opacity += 3
+            self.opacity -= 3
 
 
 register_effect("default:dirt", Dirt)
@@ -469,26 +465,22 @@ class PaleEnvironmentDirt(Dirt):
 
     # Needs a slightly different update, but doesn't need a different blit, so it saves space, just not much
     def update(self, player, pressed_keys, pickup_ready, farm):
-        # Prevent duplication
-        effect_count = 0
+        effect_count = 0  # How many dirt already exist
         for effect in farm.effects:
             if effect.__class__ == self.__class__:
                 effect_count += 1
 
-        if effect_count >= 2 and self.destruct_cd <= 0:
-            farm.effects.remove(self)
+        if effect_count > 1 and self.opacity <= 0:
+            farm.effects[farm.effects.index(self)] = ""
+            return
 
-        # Destruction timer
-        if farm.environment == "default:pale":
-            self.destruct_cd = 255
-        else:
-            if self.destruct_cd <= 0:
-                farm.effects.remove(self)
+        if self.opacity < 255 and farm.environment == "default:pale":
+            self.opacity += 3
+        elif farm.environment != "default:pale":
+            if self.opacity <= 0:
+                farm.effects[farm.effects.index(self)] = ""
 
-            self.destruct_cd -= 3
-
-        # Opacity
-        self.opacity += 3
+            self.opacity -= 3
 
 
 register_effect("default:pale-dirt", PaleEnvironmentDirt)
@@ -514,7 +506,7 @@ class PaleEnvironmentBackground:
 
         # Prevent it from being spammed
         if count > 1 and self.opacity <= 0:
-            farm.effects.remove(self)
+            farm.effects[farm.effects.index(self)] = ""
 
         # Add opacity if the environment matches and remove opacity if it doesn't
         if farm.environment == "default:pale":
@@ -524,7 +516,7 @@ class PaleEnvironmentBackground:
 
         # Remove the effect if it's invisible and the environment isn't 'pale'
         if self.opacity <= 0 and farm.environment != "default:pale":
-            farm.effects.remove(self)
+            farm.effects[farm.effects.index(self)] = ""
 
 
 register_effect("default:pale-environment-mist", PaleEnvironmentBackground)
@@ -575,6 +567,7 @@ class PaleClouds:
                 self.cloud_move_timer += clock.get_time()
 
         # Count the number of "default:pale-clouds" in the effects
+        # Note: This somehow works? How? Type should consider all classes to be the same type (unless this is exception)
         count = 0
         for effect in farm.effects:
             if type(effect) == type(self):
@@ -583,10 +576,10 @@ class PaleClouds:
         # Remove the effect if...
         if not self.clouds and farm.environment != "default:pale":
             # There are no clouds and the environment isn't pale
-            farm.effects.remove(self)
+            farm.effects[farm.effects.index(self)] = ""
         elif self.clouds == [] and count > 1:
             # There aare other cloud effects loaded and this one doesn't have any clouds
-            farm.effects.remove(self)
+            farm.effects[farm.effects.index(self)] = ""
 
         # Cloud creation
         if self.timer // self.CLOUD_CREATION_COOLDOWN and farm.environment == "default:pale":
@@ -623,26 +616,22 @@ class NeonEnvironmentDirt(Dirt):
         self.image = FarmAssets.neon_dirt.copy()
 
     def update(self, player, pressed_keys, pickup_ready, farm):
-        # Prevent duplication
-        effect_count = 0
+        effect_count = 0  # How many dirt already exist
         for effect in farm.effects:
             if effect.__class__ == self.__class__:
                 effect_count += 1
 
-        if effect_count >= 2 and self.destruct_cd <= 0:
-            farm.effects.remove(self)
+        if effect_count > 1 and self.opacity <= 0:
+            farm.effects[farm.effects.index(self)] = ""
+            return
 
-        # Destruction timer
-        if farm.environment == "default:neon":
-            self.destruct_cd = 255
-        else:
-            if self.destruct_cd <= 0:
-                farm.effects.remove(self)
+        if self.opacity <= 255 and farm.environment == "default:neon":
+            self.opacity += 3
+        elif farm.environment != "default:neon":
+            if self.opacity <= 0:
+                farm.effects[farm.effects.index(self)] = ""
 
-            self.destruct_cd -= 3
-
-        # Opacity
-        self.opacity += 3
+            self.opacity -= 3
 
 
 register_effect("default:neon-dirt", NeonEnvironmentDirt)
@@ -652,14 +641,16 @@ class NeonFireflies:
     def __init__(self):
         self.opacity = 0
 
-        self.x = 108
-        self.y = 96
+        self.x = 98 + random.randint(-8, 8)
+        self.y = 0
 
         self.angle = 45
         self.x_vel = random.uniform(-1, 1)
         self.y_vel = (1 - self.x_vel ** 2) ** 0.5 * random.choice([-1, 1])
 
         self.img = pygame.surface.Surface((4, 4), pygame.SRCALPHA)
+
+        self.pull = 0
 
         # Prevent the hex from being spell checked
         # noinspection SpellCheckingInspection
@@ -681,27 +672,55 @@ class NeonFireflies:
             screens["centered_display"].blit(self.img, ((farm.x + self.x) // 4 * 4, (248 + self.y) // 4 * 4))
 
     def update(self, player, pressed_keys, pickup_ready, farm):
-        # TODO: Give this a custom animation for switching out of the environment
         if self.x <= 16:
             self.x_vel = random.uniform(0.5, 1)
             self.y_vel = (1 - self.x_vel ** 2) ** 0.5 * random.choice([-1, 1])
+
+            self.x = 16
 
         if self.x >= 176:
             self.x_vel = random.uniform(-1, -0.5)
             self.y_vel = (1 - self.x_vel ** 2) ** 0.5 * random.choice([-1, 1])
 
+            self.x = 176
+
         if self.y <= 32:
             self.y_vel = random.uniform(0.5, 1)
             self.x_vel = (1 - self.y_vel ** 2) ** 0.5 * random.choice([-1, 1])
+
         if self.y >= 200:
             self.y_vel = random.uniform(-1, -0.5)
             self.x_vel = (1 - self.y_vel ** 2) ** 0.5 * random.choice([-1, 1])
 
+            self.y = 200
+
+        if farm.environment != "default:neon":
+            self.pull += 0.1
+
+            if self.y < 8:
+                farm.effects[farm.effects.index(self)] = ""
+
+            # The distance between the fly and the vacuum (center-top)
+            x_distance = (98 + random.randint(-8, 8)) - self.x
+            y_distance = -self.y
+            distance = (x_distance ** 2 + y_distance ** 2) ** 0.5
+
+            self.x += x_distance / distance * self.pull
+            self.y += y_distance / distance * self.pull
+
+            # self.x_vel = -x_distance / distance
+            # self.y_vel = -y_distance / distance
+
+
+        else:
+            self.pull = 0
+
+        # Prevent the firefly from going out of the farm when being vacuumed
+        if self.y < 4:
+            self.y = 4
+
         self.x += self.x_vel * 2
         self.y += self.y_vel * 2
-        # 224 248
-        # 416 464
-        # 192 216
 
 
 register_effect("default:neon-fireflies", NeonFireflies)
