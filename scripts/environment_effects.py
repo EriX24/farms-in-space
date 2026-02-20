@@ -5,8 +5,6 @@ import random
 from scripts.assets import FarmAssets
 from scripts.logger import log_error
 
-# TODO: Fix grass flashing when spamming NeonFireflies
-
 effects = {}
 
 

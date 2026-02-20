@@ -1,7 +1,6 @@
 import copy
 import ctypes
 import json
-# TODO: Fix the energy bar disappearing when your start going below a threshold
 # TODO: Make the fabrication logs show on screen
 import math
 import os
