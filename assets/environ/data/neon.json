@@ -1,0 +1,12 @@
+{
+  "id": "default:neon-environment",
+
+  "blueprint": "neon-environment",
+
+  "TODO": "input to be added",
+  "input": {
+
+  },
+  "environment": "default:neon"
+
+}

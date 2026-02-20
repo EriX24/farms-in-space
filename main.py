@@ -1205,6 +1205,7 @@ class Generator:
             if random.random() <= self.electricity / (2000 * 0.5):
                 angle = random.randint(0, 360)
 
+                # TODO: This angle system is completely broken for whatever reason, fix it in another commit
                 adjacent = math.cos(angle) * 20
                 opposite = math.sin(angle) * 20
 
@@ -2234,6 +2235,7 @@ while True:
     if pressed_keys[pygame.K_f] and dev_tools:
         text = Fonts.default_font.render("Loging info!", False, (0, 0, 0))
         centered_display.blit(text, (700 - text.get_width() / 2, 4))
+        print([effect.__class__ for effect in farms.farm_1.effects])
         # print("AAAA", len(items_register.items_ref.keys()))
 
         # del item_list

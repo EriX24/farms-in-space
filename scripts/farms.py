@@ -63,10 +63,27 @@ class Farm:
         if not self.effects_added:
             self.add_effects()
 
+        remove_invalid_effects = False
+
         # Update each effect
         for effect in self.effects:
             # print(effect)
-            effect.update(player, pressed_keys, pickup_ready, self)
+            if effect.__class__ in effects.values():
+                effect.update(player, pressed_keys, pickup_ready, self)
+
+            else:
+                remove_invalid_effects = True
+
+        while remove_invalid_effects:
+            invalid_entry_remaining = False
+            for effect in self.effects:
+                if effect.__class__ not in effects.values():
+                    self.effects.remove(effect)
+                    invalid_entry_remaining = True
+                    break
+
+            if not invalid_entry_remaining:
+                break
 
     def add_effects(self):
         """Apply the effects for the current environment"""

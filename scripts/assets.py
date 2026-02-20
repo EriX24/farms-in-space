@@ -270,6 +270,7 @@ class FarmAssets:
     # Ground
     dirt = pygame.image.load(os.path.join("assets", "farm", "ground", "dirt.png")).convert_alpha()
     pale_dirt = pygame.image.load(os.path.join("assets", "farm", "ground", "pale-dirt.png")).convert_alpha()
+    neon_dirt = pygame.image.load(os.path.join("assets", "farm", "ground", "neon-dirt.png")).convert_alpha()
 
     # Plants
     test_plant = pygame.image.load(os.path.join("assets", "farm", "plants", "test-plant.png")).convert_alpha()

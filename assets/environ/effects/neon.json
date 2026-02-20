@@ -1,0 +1,17 @@
+{
+  "effects": [
+    "default:neon-dirt",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies",
+    "default:neon-fireflies"
+  ],
+
+  "environment": "default:neon"
+}

@@ -6,6 +6,9 @@ import pygame
 from scripts.logger import log_error
 
 
+# TODO: Neon environment will look better once lighting is added
+# TODO: Add required gases for neon environment
+
 class RecipeManager:
     def __init__(self):
         # All recipes
