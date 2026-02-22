@@ -53,30 +53,63 @@ class Dirt:
         # Copy the image to avoid referencing the same data in memory and messing this up
         self.image = FarmAssets.dirt.copy()
 
+        self.environment = "default:default"
+
+        # This variable is used to determine if something is dirt or not (its supposed to be named that)
+        # noinspection SpellCheckingInspection
+        self.funyfireballll = True
+
     def blit(self, farm):
         self.image.set_alpha(self.opacity)
 
         # The dirt will always be there
-        if farm.environment:
-            screens["centered_display"].blit(self.image, (farm.x, 248))
+        screens["centered_display"].blit(self.image, (farm.x, 248))
 
     def update(self, player, pressed_keys, pickup_ready, farm):
-        effect_count = 0  # How many dirt already exist
+        """
+        This code may cause a memory leak if the player spams the environments, hopefully they don't do that enough
+        for the game to die
+        """
+
+        # Prevent the environment from being spammed
+        effect_count = 0
         for effect in farm.effects:
             if effect.__class__ == self.__class__:
                 effect_count += 1
 
-        if effect_count > 1 and self.opacity <= 0:
-            farm.effects[farm.effects.index(self)] = ""
-            return
+        if effect_count > 1:
+            for effect in farm.effects:
+                # noinspection SpellCheckingInspection
+                if (effect_count > 1 and effect.__class__ in effects.values() and effect.__dict__.get("funyfireballll")
+                        and effect.opacity <= 0):
+                    farm.effects[farm.effects.index(effect)] = ""
+                    effect_count -= 1
 
-        if self.opacity < 255 and farm.environment == "default:default":
-            self.opacity += 3
-        elif farm.environment != "default:default":
-            if self.opacity <= 0:
-                farm.effects[farm.effects.index(self)] = ""
+                if effect_count == 1:
+                    break
 
+        # Remove all other dirt if the front one is fully visible
+        first_dirt = self
+        for effect in farm.effects[::-1]:
+            # noinspection SpellCheckingInspection
+            if (effect.__class__ in effects.values() and effect.__dict__.get("funyfireballll")
+                    and effect.environment == farm.environment):
+                first_dirt = effect
+                break
+
+        if first_dirt.opacity >= 255 and first_dirt != self:
             self.opacity -= 3
+
+        # Increase opacity
+        if farm.environment == self.environment and self.opacity < 255:
+            # print("increment")
+            self.opacity += 3
+        # else:
+        #     print(self.environment, self.opacity)
+
+        # Reduce opacity
+        # elif farm.environment != self.environment and self.opacity > 200:
+        #     self.opacity -= 3
 
 
 register_effect("default:dirt", Dirt)
@@ -164,7 +197,7 @@ class Grass:
 
         else:
             # Force grass to be at the front
-            farm.effects.remove(self)
+            farm.effects[farm.effects.index(self)] = ""
             farm.effects.append(self)
 
         # Used for testing list overflow
@@ -460,27 +493,8 @@ register_effect("default:grass", Grass)
 class PaleEnvironmentDirt(Dirt):
     def __init__(self):
         super().__init__()
-        self.opacity = 0
         self.image = FarmAssets.pale_dirt.copy()
-
-    # Needs a slightly different update, but doesn't need a different blit, so it saves space, just not much
-    def update(self, player, pressed_keys, pickup_ready, farm):
-        effect_count = 0  # How many dirt already exist
-        for effect in farm.effects:
-            if effect.__class__ == self.__class__:
-                effect_count += 1
-
-        if effect_count > 1 and self.opacity <= 0:
-            farm.effects[farm.effects.index(self)] = ""
-            return
-
-        if self.opacity < 255 and farm.environment == "default:pale":
-            self.opacity += 3
-        elif farm.environment != "default:pale":
-            if self.opacity <= 0:
-                farm.effects[farm.effects.index(self)] = ""
-
-            self.opacity -= 3
+        self.environment = "default:pale"
 
 
 register_effect("default:pale-dirt", PaleEnvironmentDirt)
@@ -614,24 +628,7 @@ class NeonEnvironmentDirt(Dirt):
     def __init__(self):
         super().__init__()
         self.image = FarmAssets.neon_dirt.copy()
-
-    def update(self, player, pressed_keys, pickup_ready, farm):
-        effect_count = 0  # How many dirt already exist
-        for effect in farm.effects:
-            if effect.__class__ == self.__class__:
-                effect_count += 1
-
-        if effect_count > 1 and self.opacity <= 0:
-            farm.effects[farm.effects.index(self)] = ""
-            return
-
-        if self.opacity <= 255 and farm.environment == "default:neon":
-            self.opacity += 3
-        elif farm.environment != "default:neon":
-            if self.opacity <= 0:
-                farm.effects[farm.effects.index(self)] = ""
-
-            self.opacity -= 3
+        self.environment = "default:neon"
 
 
 register_effect("default:neon-dirt", NeonEnvironmentDirt)
