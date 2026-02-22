@@ -57,7 +57,7 @@ class Dirt:
 
         # This variable is used to determine if something is dirt or not (its supposed to be named that)
         # noinspection SpellCheckingInspection
-        self.funyfireballll = True
+        self.funyfireeballlll = True  # Hello Yfs
 
     def blit(self, farm):
         self.image.set_alpha(self.opacity)
@@ -80,7 +80,7 @@ class Dirt:
         if effect_count > 1:
             for effect in farm.effects:
                 # noinspection SpellCheckingInspection
-                if (effect_count > 1 and effect.__class__ in effects.values() and effect.__dict__.get("funyfireballll")
+                if (effect_count > 1 and effect.__class__ in effects.values() and effect.__dict__.get("funyfireeballlll")
                         and effect.opacity <= 0):
                     farm.effects[farm.effects.index(effect)] = ""
                     effect_count -= 1
@@ -92,7 +92,7 @@ class Dirt:
         first_dirt = self
         for effect in farm.effects[::-1]:
             # noinspection SpellCheckingInspection
-            if (effect.__class__ in effects.values() and effect.__dict__.get("funyfireballll")
+            if (effect.__class__ in effects.values() and effect.__dict__.get("funyfireeballlll")
                     and effect.environment == farm.environment):
                 first_dirt = effect
                 break
