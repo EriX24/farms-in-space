@@ -1,7 +1,7 @@
 import copy
 import ctypes
 import json
-# TODO: Make the fabrication logs show on screen
+# TODO: Work more on the lighting
 import math
 import os
 import random
@@ -30,6 +30,7 @@ from scripts import items_register
 from scripts import plants_register
 from scripts import farms as farm_creator
 from scripts import environment_effects
+from scripts import decoration
 
 # Pygame init
 pygame.init()
@@ -37,8 +38,9 @@ pygame.mixer.init()
 # [Priority] Highest always appears on top of all the others
 screen = pygame.display.set_mode((1400, 800), pygame.RESIZABLE)  # Refreshes and updates even when paused (FPS) [1]
 display = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Doesn't refresh when paused (Default) [3]
+light_display = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Centered and used for lighting (Default) [4]
 centered_display = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Centered variant of display [2]
-overlay = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Blited on top of everything else no matter order [4]
+overlay = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Blited on top of everything else no matter order [5]
 clock = pygame.time.Clock()
 pygame.display.set_caption("Outer")
 
@@ -54,6 +56,9 @@ farm_creator.register(pygame, clock, screen=screen, display=display, centered_di
 environment_effects.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
                              overlay=overlay)
 
+decoration.register(pygame, clock, display=display, centered_display=centered_display, overlay=overlay,
+                    light_display=light_display)
+
 recipe_manager = RecipeManager()
 environment_recipe_manager = EnvironmentRecipeManager()
 
@@ -66,7 +71,10 @@ j_ready = True
 l_ready = True
 k_ready = True
 esc_ready = False
-dev_tools = True
+dev_tools = True  # TODO: Some dev tools don't get disabled by turing this off, fix this in the future
+
+lights = []
+
 glitch_effects = False
 enhanced_glitch_effects = False
 
@@ -1846,22 +1854,29 @@ while True:
 
         if event.type == pygame.WINDOWRESIZED:
             display = pygame.surface.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+
+            # TODO: Remove this in the future since its arbitrary
             centered_display = pygame.surface.Surface((screen.get_width() - (screen.get_width() - 1400),
                                                        screen.get_height() - (screen.get_height() - 800)),
                                                       pygame.SRCALPHA)
+
             overlay = pygame.surface.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
 
-            items_register.register(pygame, clock, display=display, centered_display=centered_display, overlay=overlay)
+            items_register.register(pygame, clock, display=display, centered_display=centered_display, overlay=overlay,
+                                    light_display=light_display)
 
             plants_register.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
-                                     overlay=overlay)
+                                     overlay=overlay, light_display=light_display)
 
             farm_creator.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
-                                  overlay=overlay)
+                                  overlay=overlay, light_display=light_display)
 
             environment_effects.register(pygame, clock, screen=screen, display=display,
-                                         centered_display=centered_display,
-                                         overlay=overlay)
+                                         centered_display=centered_display, overlay=overlay,
+                                         light_display=light_display)
+
+            decoration.register(pygame, clock, display=display, centered_display=centered_display, overlay=overlay,
+                                light_display=light_display)
 
             resized = True
 
@@ -1873,6 +1888,7 @@ while True:
     if not paused or resized:
         display.fill("#30303300")
         centered_display.fill("#30303300")
+        light_display.fill("#000000")
         overlay.fill("#30303300")
     screen.fill("#303033")
 
@@ -1989,6 +2005,9 @@ while True:
             farms.update()
             player.update(pressed_keys)
 
+            for decoration_ in decoration.room_decoration:
+                decoration_.update()
+
             # Items
             for item in items:
                 item.update(player, pressed_keys, j_ready)
@@ -2051,7 +2070,7 @@ while True:
             # Blit the player
             player.blit()
 
-            # Bli the items
+            # Blit the items
             for item in items:
                 item.blit()
 
@@ -2065,6 +2084,10 @@ while True:
 
             # The room outline
             centered_display.blit(RoomAssets.room_outline, (20, 200))
+
+            # Decoration
+            for decoration_ in decoration.room_decoration:
+                decoration_.blit()
 
             # Show position of the pixel that has been clicked on [This can crash the game]
             if mouse_keys[0]:
@@ -2243,11 +2266,27 @@ while True:
     if not paused or resized:
         screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
         screen.blit(display, (0, 0))
+
+        # Darken the screen
+        if mode == "play":
+            screen.fill("#1a1a1a", special_flags=pygame.BLEND_RGB_SUB)
+
+        screen.blit(light_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2),
+                    special_flags=pygame.BLEND_RGB_ADD)
+
         screen.blit(overlay, (0, 0))
     else:
         paused_screen = screen.copy()
         paused_screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
         paused_screen.blit(display, (0, 0))
+
+        # Darken the screen
+        if mode == "play":
+            paused_screen.fill("#1a1a1a", special_flags=pygame.BLEND_RGB_SUB)
+
+        paused_screen.blit(light_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2),
+                           special_flags=pygame.BLEND_RGB_ADD)
+
         paused_screen.blit(overlay, (0, 0))
 
         screen.blit(paused_screen)

@@ -247,6 +247,13 @@ class RoomAssets:
     # Room assets
     room_outline = pygame.image.load(os.path.join("assets", "environment", "room", "room-outline.png")).convert_alpha()
 
+    # Pod light
+    pod_light = pygame.image.load(
+        os.path.join("assets", "environment", "room", "pod-light", "pod-light.png")).convert_alpha()
+
+    pod_light_lux = pygame.image.load(
+        os.path.join("assets", "environment", "room", "pod-light", "light.png")).convert_alpha()
+
 
 class FarmAssets:
     # Farm plot
