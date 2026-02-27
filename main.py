@@ -1,7 +1,6 @@
 import copy
 import ctypes
 import json
-# TODO: Work more on the lighting
 import math
 import os
 import random
@@ -71,7 +70,7 @@ j_ready = True
 l_ready = True
 k_ready = True
 esc_ready = False
-dev_tools = True  # TODO: Some dev tools don't get disabled by turing this off, fix this in the future
+dev_tools = False
 
 lights = []
 
@@ -536,8 +535,6 @@ class Dispenser:
 
         # Farms selected
         elif self.entry == "farms":
-            # WIP
-            # TODO: Work on the accessing of the farms [???]
             self.dispenser_screen.blit(self.assets.farms_entry, (0, 0))
             self.dispenser_screen.blit(self.assets.farm_selection, (0, 0))
 
@@ -1210,9 +1207,8 @@ class Generator:
         # I am dying inside :)
         for _ in range(4):
             if random.random() <= self.electricity / (2000 * 0.5):
-                angle = random.randint(0, 360)
+                angle = math.radians(random.randint(0, 360))
 
-                # TODO: This angle system is completely broken for whatever reason, fix it in another commit
                 adjacent = math.cos(angle) * 20
                 opposite = math.sin(angle) * 20
 
@@ -1855,11 +1851,6 @@ while True:
         if event.type == pygame.WINDOWRESIZED:
             display = pygame.surface.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
 
-            # TODO: Remove this in the future since its arbitrary
-            centered_display = pygame.surface.Surface((screen.get_width() - (screen.get_width() - 1400),
-                                                       screen.get_height() - (screen.get_height() - 800)),
-                                                      pygame.SRCALPHA)
-
             overlay = pygame.surface.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
 
             items_register.register(pygame, clock, display=display, centered_display=centered_display, overlay=overlay,
@@ -2238,7 +2229,7 @@ while True:
     screen.blit(fps_text, (4, screen.get_height() - 92))
 
     # Repurposed this for debugging/testing that doesn't include loging
-    if pressed_keys[pygame.K_f] and True:
+    if pressed_keys[pygame.K_f] and dev_tools:
         dispenser.add_log("item", 1)
         dispenser.add_log("test item2 )", 1)
         dispenser.add_log("test item3 )", 1)
