@@ -3,6 +3,8 @@ from scripts.environment_effects import EffectsLoadingManager, effects, Grass
 from scripts.logger import log_error
 
 
+# TODO: When the farms eventually show what is outside the pod (space), remove the background colour in the farm box image
+
 def register(pygame_module, clock_, **surfaces):
     global pygame
     global clock

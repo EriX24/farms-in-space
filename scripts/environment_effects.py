@@ -1,3 +1,5 @@
+import copy
+import math
 import os
 import json
 import random
@@ -80,7 +82,8 @@ class Dirt:
         if effect_count > 1:
             for effect in farm.effects:
                 # noinspection SpellCheckingInspection
-                if (effect_count > 1 and effect.__class__ in effects.values() and effect.__dict__.get("funyfireeballlll")
+                if (effect_count > 1 and effect.__class__ in effects.values() and effect.__dict__.get(
+                        "funyfireeballlll")
                         and effect.opacity <= 0):
                     farm.effects[farm.effects.index(effect)] = ""
                     effect_count -= 1
@@ -628,7 +631,43 @@ class NeonEnvironmentDirt(Dirt):
     def __init__(self):
         super().__init__()
         self.image = FarmAssets.neon_dirt.copy()
+        self.light = FarmAssets.neon_dirt_lux.copy()
+
+        self.light_level = 0  # -3 to 3
+        self.light_fluctuation = 0
         self.environment = "default:neon"
+
+    def blit(self, farm):
+        self.image.set_alpha(self.opacity)
+
+        self.light = FarmAssets.neon_dirt_lux.copy()
+        self.light.set_alpha(255 - (255 - self.opacity) * 3)
+
+        # The dirt will always be there
+        screens["centered_display"].blit(self.image, (farm.x, 248))
+
+        # Animate the light by making it fluctuate
+        self.light_fluctuation += 0.1
+        self.light_fluctuation %= 4 * math.pi
+
+        self.light_level = math.sin(0.5 * self.light_fluctuation)  # Use sine since it looks better
+
+        light_value = (abs(self.light_level) * 5, abs(self.light_level) * 5, abs(self.light_level) * 5)
+
+        self.light.fill(light_value, special_flags=(pygame.BLEND_RGB_SUB, pygame.BLEND_RGB_ADD)[self.light_level > 0])
+
+        # Make the light fluctuation only affect the regular areas around the lights
+        pixel_array = pygame.PixelArray(self.light)
+
+        # Quite a bad fix but it works
+        pixel_array.replace(self.light.get_at((4, 4)), (0, 0, 0), weights=(0.01, 0.01, 0.01))
+
+        # Unlock the surface
+        pixel_array.close()
+        del pixel_array
+
+        # Even though this is supposed to be light it's used like this so it doesn't shine on the player
+        screens["centered_display"].blit(self.light, (farm.x, 248), special_flags=pygame.BLEND_RGB_ADD)
 
 
 register_effect("default:neon-dirt", NeonEnvironmentDirt)
@@ -646,12 +685,36 @@ class NeonFireflies:
         self.y_vel = (1 - self.x_vel ** 2) ** 0.5 * random.choice([-1, 1])
 
         self.img = pygame.surface.Surface((4, 4), pygame.SRCALPHA)
+        self.light = pygame.surface.Surface((20, 20), pygame.SRCALPHA)
 
         self.pull = 0
 
+        self.v = 0
+
         # Prevent the hex from being spell checked
         # noinspection SpellCheckingInspection
-        self.img.fill(random.choice(["#ff3b94", "#4deeea", "#74ee15", "#ffe700"]))
+        color = random.choice([["#ff3b94", "#19050d", "#0c0307"],
+                               ["#4deeea", "#071817", "#030c0b"],
+                               ["#74ee15", "#0b1802", "#050c01"],
+                               ["#ffe700", "#191700", "#130b00"]])
+        self.img.fill(color[0])
+
+        # Fill in the light, might change this later since it's bad
+        self.light.fill(color[1], (8, 8, 4, 4))
+        self.light.fill(color[1], (8, 4, 4, 4))
+        self.light.fill(color[1], (4, 8, 4, 4))
+        self.light.fill(color[1], (12, 8, 4, 4))
+        self.light.fill(color[1], (8, 12, 4, 4))
+
+        self.light.fill(color[2], (0, 4, 4, 12))
+        self.light.fill(color[2], (4, 0, 12, 4))
+        self.light.fill(color[2], (4, 16, 12, 4))
+        self.light.fill(color[2], (16, 4, 4, 12))
+
+        self.light.fill(color[2], (4, 4, 4, 4))
+        self.light.fill(color[2], (12, 4, 4, 4))
+        self.light.fill(color[2], (4, 12, 4, 4))
+        self.light.fill(color[2], (12, 12, 4, 4))
 
         self.just_created = True
 
@@ -666,7 +729,12 @@ class NeonFireflies:
 
         else:
             self.just_created = False
-            screens["centered_display"].blit(self.img, ((farm.x + self.x) // 4 * 4, (248 + self.y) // 4 * 4))
+
+            screens["centered_display"].blit(self.img, ((farm.x + self.x) // 4 * 4, (248 + self.y) // 4 * 4),
+                                             special_flags=pygame.BLEND_RGBA_ADD)
+
+            screens["centered_display"].blit(self.light, ((farm.x + self.x) // 4 * 4 - 8, (248 + self.y) // 4 * 4 - 8),
+                                             special_flags=pygame.BLEND_RGBA_ADD)
 
     def update(self, player, pressed_keys, pickup_ready, farm):
         if self.x <= 16:

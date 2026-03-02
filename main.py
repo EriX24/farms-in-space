@@ -1,3 +1,5 @@
+# TODO: Fix the plants not showing up and pale moss dying instantly
+
 import copy
 import ctypes
 import json
@@ -37,23 +39,26 @@ pygame.mixer.init()
 # [Priority] Highest always appears on top of all the others
 screen = pygame.display.set_mode((1400, 800), pygame.RESIZABLE)  # Refreshes and updates even when paused (FPS) [1]
 display = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Doesn't refresh when paused (Default) [3]
+
+# Only used for lighting that affects the whole screen! Use other surfaces for other lighting
 light_display = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Centered and used for lighting (Default) [4]
+
 centered_display = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Centered variant of display [2]
 overlay = pygame.surface.Surface((1400, 800), pygame.SRCALPHA)  # Blited on top of everything else no matter order [5]
 clock = pygame.time.Clock()
 pygame.display.set_caption("Outer")
 
 items_register.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
-                        overlay=overlay)
+                        overlay=overlay, light_display=light_display)
 
 plants_register.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
-                         overlay=overlay)
+                         overlay=overlay, light_display=light_display)
 
 farm_creator.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
-                      overlay=overlay)
+                      overlay=overlay, light_display=light_display)
 
 environment_effects.register(pygame, clock, screen=screen, display=display, centered_display=centered_display,
-                             overlay=overlay)
+                             overlay=overlay, light_display=light_display)
 
 decoration.register(pygame, clock, display=display, centered_display=centered_display, overlay=overlay,
                     light_display=light_display)
@@ -70,7 +75,7 @@ j_ready = True
 l_ready = True
 k_ready = True
 esc_ready = False
-dev_tools = False
+dev_tools = True
 
 lights = []
 
@@ -2248,22 +2253,23 @@ while True:
     if pressed_keys[pygame.K_f] and dev_tools:
         text = Fonts.default_font.render("Loging info!", False, (0, 0, 0))
         centered_display.blit(text, (700 - text.get_width() / 2, 4))
-        print([effect.__class__ for effect in farms.farm_1.effects])
+        print([plant.__class__ for plant in farms.farm_1.plants])
         # print("AAAA", len(items_register.items_ref.keys()))
 
         # del item_list
 
     # Blit the displays on the screen
+
     if not paused or resized:
         screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
         screen.blit(display, (0, 0))
 
+        screen.blit(light_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2),
+                    special_flags=pygame.BLEND_RGB_ADD)
+
         # Darken the screen
         if mode == "play":
             screen.fill("#1a1a1a", special_flags=pygame.BLEND_RGB_SUB)
-
-        screen.blit(light_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2),
-                    special_flags=pygame.BLEND_RGB_ADD)
 
         screen.blit(overlay, (0, 0))
     else:
@@ -2271,12 +2277,12 @@ while True:
         paused_screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
         paused_screen.blit(display, (0, 0))
 
+        paused_screen.blit(light_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2),
+                           special_flags=pygame.BLEND_RGB_ADD)
+
         # Darken the screen
         if mode == "play":
             paused_screen.fill("#1a1a1a", special_flags=pygame.BLEND_RGB_SUB)
-
-        paused_screen.blit(light_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2),
-                           special_flags=pygame.BLEND_RGB_ADD)
 
         paused_screen.blit(overlay, (0, 0))
 
