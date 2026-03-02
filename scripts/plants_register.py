@@ -708,7 +708,7 @@ class PaleMoss(Plant):
 
     def evaluate_input(self, farm: Farm, ):
         # Needs other plants to grow
-        if len(farm.plants) >= 2 and farm.environment == "pale":
+        if len(farm.plants) >= 2 and farm.environment == "default:pale":
             pass
         else:
             farm.plants.remove(self)

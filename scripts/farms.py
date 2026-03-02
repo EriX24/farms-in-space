@@ -52,6 +52,10 @@ class Farm:
             self.effects = []
             self.effects_added = True
 
+        # Blit each plant
+        for plant in self.plants:
+            plant.blit()
+
         # Blit each effect
         for effect in self.effects:
             effect.blit(self)

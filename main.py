@@ -1,5 +1,3 @@
-# TODO: Fix the plants not showing up and pale moss dying instantly
-
 import copy
 import ctypes
 import json
@@ -2053,12 +2051,6 @@ while True:
             # Blit
             dispenser.blit()
             generator.blit()
-
-            # NOTICE: repurpose this code and make each farm run this for its plants [is this done yet?]
-            # Blit each plant
-            for farm in [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4]:
-                for plant in farm.plants:
-                    plant.blit()
 
             # Blit all the farms
             farms.blit()
