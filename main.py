@@ -1129,10 +1129,10 @@ class Dispenser:
             log = self.fabrication_logs[log_idx]
             item_name = items_register.get_translation(log['item']).lower()
 
-            fabrication_text = Fonts.default_font.render(f"Fabricated", False, "#151518")
+            fabrication_text = Fonts.default_font.render(f"Fabricated", False, "#A8A8A8")
 
             # TODO: Considier adding more customisation to the colours (Yes considier is spelt like that now)
-            item_text = Fonts.default_font.render(f" {item_name}", False, "#151518")
+            item_text = Fonts.default_font.render(f" {item_name}", False, "#A8A8A8")
 
             multiplier_text = Fonts.default_font.render(f" X {log['multiplier']}", False, "#FFFF00")
 
