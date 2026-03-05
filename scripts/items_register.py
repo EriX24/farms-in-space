@@ -58,6 +58,7 @@ def register_item(item):
 def get_translation(key):
     return item_translations.get(key, key)
 
+
 def load_translations(translations):
     for translation in translations.keys():
         item_translations[translation] = translations[translation]
@@ -459,6 +460,22 @@ class PaleArgonItem(AirItem):
 
 
 register_item(PaleArgonItem)
+
+
+# Neon gas
+class Neon(AirItem):
+    name = "neon-air"
+    item_icon = ItemAssets.neon_air
+
+    def __init__(self):
+        super().__init__()
+
+        # Required variables
+        self.name = "neon-air"
+        self.image = ItemAssets.neon_air
+
+
+register_item(Neon)
 
 
 # Pale moss swathe

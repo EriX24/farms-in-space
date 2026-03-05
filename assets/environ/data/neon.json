@@ -3,9 +3,8 @@
 
   "blueprint": "neon-environment",
 
-  "TODO": "input to be added",
   "input": {
-
+    "neon": 0.01
   },
   "environment": "default:neon"
 

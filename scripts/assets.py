@@ -69,6 +69,8 @@ class ItemAssets:
     pale_air = pygame.image.load(os.path.join("assets", "items", "pale-air.png")).convert_alpha()
     pale_argon = pygame.image.load(os.path.join("assets", "items", "pale-argon.png")).convert_alpha()
 
+    neon_air = pygame.image.load(os.path.join("assets", "items", "neon.png")).convert_alpha()
+
 
 class DispenserAssets:
     # Dispenser assets
