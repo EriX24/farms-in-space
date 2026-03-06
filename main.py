@@ -1438,9 +1438,10 @@ class Farms:
                                       + farm_object.provided_items.get(gas, 0))  # The amount in the environment
                         gas_required = environment_req.get(gas, 0)  # Minimum amount of the gas required
 
+                        dispenser.stored_items[gas] = dispenser.stored_items.get(gas, 0)  # Discover the gas
+
                         # If there is not enough gas in the environment and there is enough in the dispenser, resupply
                         if gas_amount < gas_required < dispenser.stored_items.get(gas, 0):
-                            dispenser.stored_items[gas] = dispenser.stored_items.get(gas, 0)  # Discover the gas
                             dispenser.stored_items[gas] -= (gas_required - gas_amount)  # Remove the portion
                             farm_object.environment_items += (gas_required - gas_amount)  # Resupply the gasses
 
