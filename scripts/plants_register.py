@@ -192,6 +192,7 @@ class PaleBushPlant(Plant):
 
     def evaluate_input(self, farm):
         # Consumes pale air (0.01 / s)
+        # print(farm.environment_items.get("pale-air"))
         if farm.environment_items.get("pale-air", None) is not None and farm.environment_items.get("pale-air") > 0:
 
             if farm.provided_items.get("pale-air", 0) - 0.01 / (1000 / FARM_UPDATE_TICKS) >= 0:

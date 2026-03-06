@@ -4,7 +4,7 @@
   "blueprint": "neon-environment",
 
   "input": {
-    "neon": 0.01
+    "neon-air": 0.01
   },
   "environment": "default:neon"
 

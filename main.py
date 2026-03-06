@@ -205,7 +205,7 @@ class Dispenser:
         self.history = ["unselected"]  # What it will go to when you press L
 
         # Items
-        self.stored_items = {"pale-air": 50, "pale-argon": 50, "pale-moss-swathe": 1,
+        self.stored_items = {"pale-air": 0, "pale-argon": 0, "pale-moss-swathe": 1,
                              "light-bulb-fern-seed": 1, "pale-bush-seed": 1, "simple-recharger": 1, "energy-leaf": 50}
 
         # Items being fabricated
@@ -1432,16 +1432,17 @@ class Farms:
                     # Reset the provided items
                     farm_object.provided_items = {}
 
-                    # Force the environment minimum
+                    # Force the environment minimum if possible
                     for gas in environment_req.keys():
-                        gas_amount = farm_object.environment_items.get(gas, 0)  # The amount in the environment
+                        gas_amount = (farm_object.environment_items.get(gas, 0)
+                                      + farm_object.provided_items.get(gas, 0))  # The amount in the environment
                         gas_required = environment_req.get(gas, 0)  # Minimum amount of the gas required
 
-                        # If the minimum threshold is not surpassed, resupply the environment with the minimum
-                        if farm_object.environment_items.get(gas, 0) < environment_req.get(gas, 0):
+                        # If there is not enough gas in the environment and there is enough in the dispenser, resupply
+                        if gas_amount < gas_required < dispenser.stored_items.get(gas, 0):
                             dispenser.stored_items[gas] = dispenser.stored_items.get(gas, 0)  # Discover the gas
                             dispenser.stored_items[gas] -= (gas_required - gas_amount)  # Remove the portion
-                            farm_object.environment_items[gas] = environment_req.get(gas, 0)  # Correct the amount
+                            farm_object.environment_items += (gas_required - gas_amount)  # Resupply the gasses
 
                     # Evaluate the gases needed by the flora
                     for plant_ in farm_object.plants:
