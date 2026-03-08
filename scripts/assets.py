@@ -199,6 +199,11 @@ class DispenserAssets:
         os.path.join("assets", "dispenser", "ui", "farms", "frame", "farms-frame-unlit.png")).convert_alpha()
     farms_frame_red_x = pygame.image.load(
         os.path.join("assets", "dispenser", "ui", "farms", "frame", "farms-frame-red-x.png")).convert_alpha()
+    farms_frame_operational = pygame.image.load(
+        os.path.join("assets", "dispenser", "ui", "farms", "frame", "farms-frame-operational.png")).convert_alpha()
+    farms_frame_warning = pygame.image.load(
+        os.path.join("assets", "dispenser", "ui", "farms", "frame", "farms-frame-warning.png")).convert_alpha()
+
     # farms_frame_red_dark = pygame.image.load(
     #     os.path.join("assets", "dispenser", "ui", "farms", "frame", "farms-frame-red-dark.png")).convert_alpha()
 

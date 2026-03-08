@@ -565,6 +565,11 @@ class Dispenser:
             if self.farms_mode == "environment" and not self.farms_selection_selected:
                 self.dispenser_screen.blit(self.assets.farms_frame_lit, (84, 92))
 
+            if [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][self.current_farm].environment_stable:
+                self.dispenser_screen.blit(self.assets.farms_frame_operational, (84, 92))
+            else:
+                self.dispenser_screen.blit(self.assets.farms_frame_warning, (84, 92))
+
             item_display_rect = self.assets.farms_frame_lit.get_rect()
             item_display_rect.x = 4
             item_display_rect.y = 92
@@ -1409,6 +1414,8 @@ class Farms:
         if self.progress:
             for _ in range(int(self.progress // FARM_UPDATE_TICKS)):
                 for farm_object in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
+                    farm_object.environment_stable = True
+
                     # Get the required items for the current environments
                     environment_req = \
                         [environment_recipe_manager.recipes[environment]["input"] for environment in
@@ -1444,6 +1451,9 @@ class Farms:
                         if gas_amount < gas_required < dispenser.stored_items.get(gas, 0):
                             dispenser.stored_items[gas] -= (gas_required - gas_amount)  # Remove the portion
                             farm_object.environment_items += (gas_required - gas_amount)  # Resupply the gasses
+                        else:
+                            # Environment isn't stable
+                            farm_object.environment_stable = False
 
                     # Evaluate the gases needed by the flora
                     for plant_ in farm_object.plants:

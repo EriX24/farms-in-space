@@ -43,6 +43,9 @@ class Farm:
         # Apply the default effects
         self.add_effects()
 
+        # The current environments stability
+        self.environment_stable = True
+
     def blit(self):
         # Blit the farm box
         screens["centered_display"].blit(FarmAssets.farm_box, (self.x, 248))
