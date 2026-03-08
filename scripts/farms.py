@@ -17,7 +17,7 @@ def register(pygame_module, clock_, **surfaces):
 
 effect_loading_manager = EffectsLoadingManager()
 
-# TODO: Figure out why plants can grow in environments without gases
+
 class Farm:
     def __init__(self, x: int):
         # X location
