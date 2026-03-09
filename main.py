@@ -858,15 +858,20 @@ class Dispenser:
                 # current_farm.plants = plants_copy
                 # print(items_register.items_ref[item_list_[self.current_item]], "finish")
 
+                # Storage is selected in the farms menu
                 if pressed_keys[
                     pygame.K_j] and j_ready and not self.farms_selection_selected and self.farms_mode == "items":
                     self.switch_entry("storage")
+
+                    # Play the select sound
                     SFXDispenser.select.play()
 
+                # Environment menu is selected in the farms menu
                 if pressed_keys[
                     pygame.K_j] and j_ready and not self.farms_selection_selected and self.farms_mode == "environment":
                     self.switch_entry("environment")
 
+                    # Set the current environment recipy to what environment the farm is currently set to
                     environments = list(environment_recipe_manager.recipes.keys())
                     environments.sort()
 
@@ -879,6 +884,7 @@ class Dispenser:
                                                        if environment_recipes[environment]["environment"] ==
                                                        current_environment][0]
 
+                    # Play the select sound
                     SFXDispenser.select.play()
 
             elif self.entry == "environment":
@@ -925,7 +931,7 @@ class Dispenser:
                 else:
                     self.d_pressed = 0
 
-                # Selection a environment
+                # Select an environment
                 if pressed_keys[pygame.K_k] and k_ready:
                     # How long the frame is lit
                     self.frame_lit_ticks = self.frame_lit_duration
@@ -941,7 +947,7 @@ class Dispenser:
                     [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][
                         self.current_farm].environment = current_environment
 
-                    # Readd the effects
+                    # Read the effects
                     [farms.farm_1, farms.farm_2, farms.farm_3, farms.farm_4][self.current_farm].effects_added = False
 
                     SFXDispenser.select.play()
@@ -972,38 +978,46 @@ class Dispenser:
                         # If the remaining time is below or equal to zero, fabricate it
                         self.fabricating_items[item_] = "FABRICATED"
 
+                        # Play the sound for fabrication
                         SFXDispenser.fabricated.play()
 
+                        # The items that will be fabricated
                         output_items = []
                         # item_ * output_ for output_ in item_recipe["output"] for item_ in output_
 
+                        # Items that have a chance to be fabricated
                         for output_ in item_recipe["output"]:
-                            # chance_output_items = []
-                            # for item__ in item_recipe["output"].keys():
-                            #     for i in range(len(list(item_recipe["output"][item__].keys()))):
-                            #         chance_output_items.append(item_recipe["output"][item__])
                             for j in range(output_["weight"]):
+                                # TODO: Change this code to be better
                                 output_items.append(output_["items"])
 
                             # output_items.append(chance_output_items)
 
                         selected_output = random.choice(output_items)
+                        # Decide what items are fabricated
                         for new_item in selected_output:
                             if type(selected_output[new_item]) == list:
+                                # If the item is referencing a list, random.randint between the two numbers
                                 amount = random.randint(selected_output[new_item][0], selected_output[new_item][1])
 
+                                # Add it to the fabrication logs
                                 self.add_log(new_item, amount)
 
+                                # Send the fabricated item to storage
                                 if self.stored_items.get(new_item):
                                     self.stored_items[new_item] += amount
                                 else:
+                                    # Discover the item if the dispenser hasn't yet
                                     self.stored_items[new_item] = amount
                             else:
+                                # Add it to the fabrication logs
                                 self.add_log(new_item, selected_output[new_item])
 
+                                # Send the fabricated item to storage
                                 if self.stored_items.get(new_item):
                                     self.stored_items[new_item] += selected_output[new_item]
                                 else:
+                                    # Discover the item if the dispenser hasn't yet
                                     self.stored_items[new_item] = selected_output[new_item]
 
                         # for new_item_name in output:
@@ -1072,6 +1086,7 @@ class Dispenser:
                 self.fabricating_items = []
 
     def get_item_list(self):
+        """Get the list of items"""
         item_list = list(self.stored_items.keys())
         item_list.sort()
 
@@ -1079,6 +1094,7 @@ class Dispenser:
 
     def add_log(self, fabricated_item, amount):
         """
+        Adds a fabrication log
         :param fabricated_item: What item should be listed
         :param amount: How much of the item should be listed
         """
@@ -1107,9 +1123,13 @@ class Dispenser:
                 {"item": fabricated_item, "multiplier": amount, "time": self.log_duration, "fade": True})
 
     def update_logs(self):
+        """Updates the fabrication logs"""
+
+        # Deduct the remaining time before the log fades
         for log in self.fabrication_logs:
             log["time"] -= clock.get_time()
 
+        # Remove logs that are under 0 time
         for log_idx in range(len(self.fabrication_logs)):
             if self.fabrication_logs[log_idx]["time"] <= 0:
                 self.fabrication_logs[log_idx] = "removed"
@@ -1117,29 +1137,40 @@ class Dispenser:
         while "removed" in self.fabrication_logs:
             self.fabrication_logs.remove("removed")
 
+        # If there are too many logs, remove the earliest one
         while len(self.fabrication_logs) > 5:
             self.fabrication_logs = self.fabrication_logs[1:]
 
     def blit_logs(self):
+        """Blit the logs onto the screen"""
+
+        # The surface for the message
         message = pygame.surface.Surface((0, 0), pygame.SRCALPHA)
+
+        # Set the size for the display surface
         for log in self.fabrication_logs:
+            # Get the text for the log to determine the size of the surface
             item_name = items_register.get_translation(log['item']).lower()
 
             text_ = Fonts.default_font.render(f"Fabricated {item_name} X {log['multiplier']}", False, "#FFFFFF")
+
+            # Set the size
             message = pygame.surface.Surface(({True: text_.get_width(), False: message.get_width()}
                                               [text_.get_width() > message.get_width() - 8],
                                               message.get_height() + 36), pygame.SRCALPHA)
 
         for log_idx in range(len(self.fabrication_logs)):
+            # Get the text for the surface
             log = self.fabrication_logs[log_idx]
             item_name = items_register.get_translation(log['item']).lower()
 
-            fabrication_text = Fonts.default_font.render(f"Fabricated", False, "#A8A8A8")
+            fabrication_text = Fonts.default_font.render(f"Fabricated", False, "#A8A8A8")  # The text is grey
 
             # TODO: Considier adding more customisation to the colours (Yes considier is spelt like that now)
-            item_text = Fonts.default_font.render(f" {item_name}", False, "#A8A8A8")
+            item_text = Fonts.default_font.render(f" {item_name}", False, "#A8A8A8")  # Item name is grey
 
-            multiplier_text = Fonts.default_font.render(f" X {log['multiplier']}", False, "#FFFF00")
+            multiplier_text = Fonts.default_font.render(f" X {log['multiplier']}", False,
+                                                        "#FFFF00")  # The amount is yellow
 
             text_ = pygame.surface.Surface(
                 (fabrication_text.get_width() + item_text.get_width() + multiplier_text.get_width(),
@@ -1148,22 +1179,27 @@ class Dispenser:
 
             # Fade in and out
             if log["time"] - (self.log_duration - 1000) >= 0 and log["fade"]:
+                # Fade in
                 alpha = -(log["time"] - self.log_duration) * (255 / 1000)
                 fabrication_text.set_alpha(alpha)
                 item_text.set_alpha(alpha)
                 multiplier_text.set_alpha(alpha)
             elif log["time"] <= 1000:
+                # Fade out
                 alpha = log["time"] * (255 / 1000)
                 fabrication_text.set_alpha(alpha)
                 item_text.set_alpha(alpha)
                 multiplier_text.set_alpha(alpha)
 
+            # Show the log's text
             text_.blit(fabrication_text, (0, 0))
             text_.blit(item_text, (fabrication_text.get_width(), 0))
             text_.blit(multiplier_text, (fabrication_text.get_width() + item_text.get_width(), 0))
 
+            # Blit the text
             message.blit(text_, (message.get_width() / 2 - text_.get_width() / 2, 4 + log_idx * 36))
 
+        # Blit the log in the bottom left corner
         message_rect = message.get_rect()
         message_rect.bottom = overlay.get_height() - 4
         message_rect.right = overlay.get_width() - 8
@@ -1173,16 +1209,23 @@ class Dispenser:
 # Generator class
 class Generator:
     def __init__(self):
+        # The assets that this uses
         self.assets = GeneratorAssets
 
+        # Rect stuff
         self.rect = self.assets.generator_default.get_rect()
         self.rect.x = 20
         self.rect.y = 200
+
+        # Electricity
         self.electricity = 40  # Max is 50
 
+        # What sprite the input chute is using
         self.input_mode = 0
 
+        # The fuel being processes
         self.fuel_que = []
+
         self.input_progress = 0
         self.fuel_progress = 0
 
@@ -1212,16 +1255,20 @@ class Generator:
         g_change = 36 / 10
         b_change = -1 / 10
 
-        # I am dying inside :)
+        # Draw lines coming out of the orb
         for _ in range(4):
             if random.random() <= self.electricity / (2000 * 0.5):
+                # Pick a random angle and convert it into radians
                 angle = math.radians(random.randint(0, 360))
 
+                # Use sine and cosine to calculate how the line should be drawn
                 adjacent = math.cos(angle) * 20
                 opposite = math.sin(angle) * 20
 
+                # Draw the line
                 pygame.draw.line(energy_orb, (135, 206, 255), (12, 13), (12 + adjacent, 13 + opposite))
 
+                # Play the zap sound everytime a bolt show up
                 SFXDispenser.zap.play()
 
         # Draw a circle with decreasing size from the maximum size based on the electricity
@@ -1269,6 +1316,7 @@ class Generator:
         # Deduct the electricity
         self.electricity -= clock.get_time() / 24000
 
+        # Increment the timers
         self.input_progress += clock.get_time()
         self.fuel_progress += clock.get_time()
 
@@ -1306,8 +1354,10 @@ class Generator:
                     (self.fuel_que[item_idx][0].image.get_width(), self.fuel_que[item_idx][0].image.get_height() - 4),
                     pygame.SRCALPHA)
 
+                # Blit the fuel item
                 new_image.blit(self.fuel_que[item_idx][0].image, (0, 0))
 
+                # Store the sliced image
                 self.fuel_que[item_idx][0].image = new_image
 
                 # Use the item for fuel when it gets fully processed
@@ -1319,7 +1369,7 @@ class Generator:
             while "" in self.fuel_que:
                 self.fuel_que.remove("")
 
-        # Lock the input mode when there is a item
+        # Lock the input mode when there is an item
         if self.fuel_que:
             self.input_mode = 2
 
@@ -1333,18 +1383,9 @@ class Farms:
     def __init__(self):
         # Farm creation
         self.assets = FarmAssets
-        # new_item = plants_register.LightBulbFern(408 - 60, "pale")
+
+        # Init the farms at different cords
         self.farm_1 = farm_creator.Farm(224)
-        # self.farm_1.plants.append(new_item)
-
-        # new_item = plants_register.PaleBushPlant(408 - 160, "pale")
-        # self.farm_1.plants.append(new_item)
-
-        # new_item = plants_register.PaleMoss(408 - 160, "pale")
-        # self.farm_1.plants.append(new_item)
-
-        # self.farm_1.environment = "pale"
-
         self.farm_2 = farm_creator.Farm(428)
         self.farm_3 = farm_creator.Farm(632)
         self.farm_4 = farm_creator.Farm(836)
@@ -1366,9 +1407,6 @@ class Farms:
                 if type(effect) == environment_effects.Dirt:
                     effect.opacity = 255
 
-        # self.farm_1.environment = "pale"
-        # self.farm_1.effects_added = False
-
         # Farm update tick "progress"
         self.progress = 0
         # Farm box pos: 224 248
@@ -1377,30 +1415,6 @@ class Farms:
         # Farm box pos: 836 248
 
     def blit(self):
-        # Farm 1
-        # centered_display.blit(self.assets.environment_overlay.get(self.farm_1["environment"], self.assets.blank_canvas),
-        #                       (224, 248))
-        #
-        # centered_display.blit(self.assets.farm_box, (224, 248))
-        #
-        # # Farm 2
-        # centered_display.blit(self.assets.environment_overlay.get(self.farm_2["environment"], self.assets.blank_canvas),
-        #                       (428, 248))
-        #
-        # centered_display.blit(self.assets.farm_box, (428, 248))
-        #
-        # # Farm 3
-        # centered_display.blit(self.assets.environment_overlay.get(self.farm_3["environment"], self.assets.blank_canvas),
-        #                       (632, 248))
-        #
-        # centered_display.blit(self.assets.farm_box, (632, 248))
-        #
-        # # Farm 4
-        # centered_display.blit(self.assets.environment_overlay.get(self.farm_4["environment"], self.assets.blank_canvas),
-        #                       (836, 248))
-        #
-        # centered_display.blit(self.assets.farm_box, (836, 248))
-
         # Blit each farm
         self.farm_1.blit()
         self.farm_2.blit()
@@ -1471,69 +1485,7 @@ class Farms:
                     # Save up memory by undiscovering the items each time
                     farm_object.environment_items = {}
 
-                    # # Provide all resources first so no plant is treated unevenly when it checks if the plant should die
-                    # for plant_ in farm_object.plants:
-                    #     plant_.evaluate_output(farm_object)
-                    #
-                    # # Loop through the environments requirements
-                    # for req_item in environment_req:
-                    #     required_item = environment_req[req_item] / (1000 / FARM_UPDATE_TICKS)
-                    #
-                    #     # If the environment can be sustained or some of the item is available
-                    #     if dispenser.stored_items.get(req_item, 0) - (
-                    #             required_item - farm_object.provided_items.get(req_item,
-                    #                                                            0) - farm_object.environment_items.get(
-                    #         req_item, 0)) >= 0:
-                    #
-                    #         # Deduct resources accordingly
-                    #         if dispenser.stored_items.get(req_item, None) is not None:
-                    #             # Deduct from stored items
-                    #             dispenser.stored_items[req_item] -= (
-                    #                     required_item - farm_object.provided_items.get(req_item,
-                    #                                                                    0) - farm_object.environment_items.get(
-                    #                 req_item, 0))
-                    #
-                    #             if farm_object.provided_items.get(req_item, None) is not None:
-                    #                 # Deduct from items provided by the farm
-                    #                 farm_object.provided_items[req_item] -= (
-                    #                         required_item - farm_object.environment_items.get(
-                    #                     req_item, 0))
-                    #
-                    #         # Check how many resources is needed from the storage and weather the environment is already sustained/self-sustaining
-                    #         if farm_object.environment_items.get(req_item):
-                    #             farm_object.environment_items[req_item] += (
-                    #                     required_item - farm_object.environment_items.get(req_item, 0))
-                    #
-                    #         else:
-                    #             farm_object.environment_items[req_item] = (
-                    #                     required_item - farm_object.environment_items.get(req_item, 0))
-                    #
-                    #         dispenser.stored_items[req_item] = round(dispenser.stored_items[req_item], 7)
-                    #
-                    #     # If the environment can't be sustained it will enter the items from the provided items
-                    #     elif farm_object.provided_items.get(req_item, 0) > 0:
-                    #         if farm_object.environment_items.get(req_item):
-                    #             farm_object.environment_items[req_item] += farm_object.provided_items[req_item]
-                    #             farm_object.provided_items[req_item] = 0
-                    #         else:
-                    #             farm_object.environment_items[req_item] = farm_object.provided_items[req_item]
-                    #             farm_object.provided_items[req_item] = 0
-                    #
-                    # # Stabilise the environment and store any additional unused items
-                    # for air_item in farm_object.provided_items:
-                    #     if dispenser.stored_items.get(air_item):
-                    #         dispenser.stored_items[air_item] += farm_object.provided_items[air_item]
-                    #         dispenser.stored_items[air_item] = round(dispenser.stored_items[air_item], 7)
-                    #     else:
-                    #         dispenser.stored_items[air_item] = farm_object.provided_items[air_item]
-                    #
-                    # # Reset the items provided by the plants
-                    # farm_object.provided_items = {}
-                    #
-                    # # Evaluate the plants
-                    # for plant_ in farm_object.plants:
-                    #     plant_.evaluate_input(farm_object)
-
+        # Run the update code for each farm
         for farm_ in [self.farm_1, self.farm_2, self.farm_3, self.farm_4]:
             farm_.update(player, pressed_keys, j_ready, dispenser)
 
@@ -1668,9 +1620,7 @@ class Player:
 
                 # Drop the item
                 else:
-                    # if len(self.items) < 2:
-                    # item_rect = self.items[-1].image.get_rect()
-
+                    #
                     self.items[-1].rect.center = self.rect.center
                     self.items[-1].rect.bottom = self.rect.top
                     if len(self.items) >= 2:
@@ -1678,6 +1628,7 @@ class Player:
                     else:
                         self.items[-1].rect.right = self.rect.right - 8
 
+                    # Update it instantly to prevent pale leaf from glitching
                     self.items[-1].floored = True
                     self.items[-1].rect.bottom = player.rect.bottom
 
@@ -1687,27 +1638,11 @@ class Player:
                     self.items[-1].rect.bottom = player.rect.top
                     self.items[-1].gravity = 0
 
-                    # self.items[-1].rect = item_rect
-
+                    # Add the item into the world
                     items.append(self.items[-1])
+
+                    # Remove the item from the player's inventory
                     self.items = self.items[:-1]
-                    # else:
-                    #     self.items[-1].rect.center = self.rect.center
-                    #     self.items[-1].rect.bottom = self.rect.top
-                    #     self.items[-1].rect.left = self.rect.left + 8
-                    #
-                    #     self.items[-1].floored = True
-                    #     self.items[-1].rect.bottom = player.rect.bottom
-                    #
-                    #     self.items[-1].inject_update(self, pressed_keys, j_ready)
-                    #
-                    #     self.items[-1].floored = False
-                    #     self.items[-1].rect.bottom = player.rect.top
-                    #     self.items[-1].gravity = 0
-                    #
-                    #     # self.items[-1].rect = item_rect
-                    #     items.append(self.items[-1])
-                    #     self.items = self.items[:-1]
 
             # Consume the item
             if pressed_keys[pygame.K_k] and self.items and k_ready:
@@ -1864,6 +1799,7 @@ while True:
             sys.exit()
 
         if event.type == pygame.WINDOWRESIZED:
+            # Resize the surfaces that need resizing
             display = pygame.surface.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
 
             overlay = pygame.surface.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
@@ -2140,12 +2076,14 @@ while True:
                 display.blit(i_command, (4, 70))
                 display.blit(l_command, (4, 104))
 
+        # Pause the game
         if pressed_keys[pygame.K_ESCAPE] and esc_ready:
             paused = not paused
             if paused:
                 paused_text = Fonts.default_font.render("Paused", False, "#000000")
                 centered_display.blit(paused_text, ((700 - (paused_text.get_width() / 2)) // 4 * 4, 160))
 
+        # If the screen gets resized, blit everything again to prevent inconsistencies
         if resized and paused:
             paused_text = Fonts.default_font.render("Paused", False, "#000000")
             centered_display.blit(paused_text, ((700 - paused_text.get_width() / 2) // 4 * 4, 160))
@@ -2154,14 +2092,20 @@ while True:
             screen.blit(display, (0, 0))
             screen.blit(overlay, (0, 0))
 
+            # TODO: There is arbitrary code here
+
     elif mode == "win":
+        # Fill the screen
         screen.fill("#000000")
+
+        # Render the text
         win_title = Fonts.default_font.render("You won", False, "#FFFFFF")
         desc1 = Fonts.default_font.render(
             "There isn't a actual ending yet this is just a placeholder for getting your generator to \n max energy",
             False, "#FFFFFF")
         desc2 = Fonts.default_font.render("Press spacebar to exit to menu\nThank you for playing", False, "#FFFFFF")
 
+        # Reinitialise everything
         holograms = Holograms()
         dispenser = Dispenser()
         generator = Generator()
@@ -2171,22 +2115,29 @@ while True:
         items_register.items = []
         items = []
 
+        # Send the player back to the menu
         if pressed_keys[pygame.K_SPACE]:
             mode = "menu"
 
+        # Display the text
         centered_display.blit(title, (4, 4))
         centered_display.blit(desc1, (4, 36))
         centered_display.blit(desc2, (4, 108))
 
 
     elif mode == "lose":
+        # Unpause the game
         paused = False
 
+        # Fill the screen
         screen.fill("#000000")
+
+        # Render the text
         lose_title = Fonts.default_font.render("You lost", False, "#FFFFFF")
         desc1 = Fonts.default_font.render("Press spacebar to exit to menu",
                                           False, "#FFFFFF")
 
+        # Reinitialise everything
         holograms = Holograms()
         dispenser = Dispenser()
         generator = Generator()
@@ -2196,9 +2147,11 @@ while True:
         items_register.items = []
         items = []
 
+        # Send the player back to the menu
         if pressed_keys[pygame.K_SPACE]:
             mode = "menu"
 
+        # Display the text
         centered_display.blit(lose_title, (4, 4))
         centered_display.blit(desc1, (4, 36))
 
@@ -2265,6 +2218,7 @@ while True:
     # Blit the displays on the screen
 
     if not paused or resized:
+        # Blit everything normally
         screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
         screen.blit(display, (0, 0))
 
@@ -2277,7 +2231,10 @@ while True:
 
         screen.blit(overlay, (0, 0))
     else:
+        # Create a different surface to prevent opaque images from being stacked together
         paused_screen = screen.copy()
+
+        # Don't change the screen when the game is paused
         paused_screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
         paused_screen.blit(display, (0, 0))
 
@@ -2290,20 +2247,17 @@ while True:
 
         paused_screen.blit(overlay, (0, 0))
 
+        # Show the paused screen
         screen.blit(paused_screen)
 
     # Show the colour of the pixel clicked [MAY crash the game]
     if mouse_keys[0]:
         print(screen.get_at(mouse_pos))
 
+    # Set resized to false
     resized = False
 
-    # item_list_ = list(dispenser.stored_items)
-    # item_list_.sort()
     # print("------------------------------------")  # Re-enable this if there are multiple prints to separate ticks
-
-    # print(clock.get_fps())
-    # print(dispenser.fabricating_items)
 
     # Pygame update
     clock.tick(60)

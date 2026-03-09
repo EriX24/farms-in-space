@@ -36,6 +36,7 @@ class PodLights(Decoration):
         self.light = RoomAssets.pod_light_lux
 
     def blit(self):
+        # Blit the image with light overlaid
         screens["centered_display"].blit(self.image, (self.x, self.y))
         screens["light_display"].blit(self.light, (self.x, self.y), special_flags=pygame.BLEND_RGB_ADD)
 

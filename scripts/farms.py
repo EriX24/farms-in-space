@@ -111,4 +111,5 @@ class Farm:
             self.effects.append(effect)
 
     def add_plant(self, plant):
+        """Adds a new plant to this farm"""
         self.plants.append(plant)

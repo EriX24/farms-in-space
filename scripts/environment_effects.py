@@ -638,6 +638,7 @@ class NeonEnvironmentDirt(Dirt):
         self.environment = "default:neon"
 
     def blit(self, farm):
+        # Different code is used since this surface has light
         self.image.set_alpha(self.opacity)
 
         self.light = FarmAssets.neon_dirt_lux.copy()
@@ -716,9 +717,11 @@ class NeonFireflies:
         self.light.fill(color[2], (4, 12, 4, 4))
         self.light.fill(color[2], (12, 12, 4, 4))
 
+        # Just created
         self.just_created = True
 
     def blit(self, farm):
+        # Prevent stacking
         firefly_count = 0
         for effect in farm.effects:
             if effect.__class__ == self.__class__:
@@ -728,8 +731,10 @@ class NeonFireflies:
             farm.effects[farm.effects.index(self)] = ""
 
         else:
+            # Prevent something that has existed for a while to be deleted by overflow
             self.just_created = False
 
+            # Show the image with the light overlaid
             screens["centered_display"].blit(self.img, ((farm.x + self.x) // 4 * 4, (248 + self.y) // 4 * 4),
                                              special_flags=pygame.BLEND_RGBA_ADD)
 
@@ -737,6 +742,7 @@ class NeonFireflies:
                                              special_flags=pygame.BLEND_RGBA_ADD)
 
     def update(self, player, pressed_keys, pickup_ready, farm):
+        # Redirect the firefly if it gets close to the edge
         if self.x <= 16:
             self.x_vel = random.uniform(0.5, 1)
             self.y_vel = (1 - self.x_vel ** 2) ** 0.5 * random.choice([-1, 1])
@@ -759,9 +765,11 @@ class NeonFireflies:
 
             self.y = 200
 
+        # Pull the fireflies out of the environment
         if farm.environment != "default:neon":
             self.pull += 0.1
 
+            # Delete it
             if self.y < 8:
                 farm.effects[farm.effects.index(self)] = ""
 
@@ -770,20 +778,19 @@ class NeonFireflies:
             y_distance = -self.y
             distance = (x_distance ** 2 + y_distance ** 2) ** 0.5
 
+            # Pull the fly towards the top
             self.x += x_distance / distance * self.pull
             self.y += y_distance / distance * self.pull
 
-            # self.x_vel = -x_distance / distance
-            # self.y_vel = -y_distance / distance
-
-
         else:
+            # Reset the pull
             self.pull = 0
 
         # Prevent the firefly from going out of the farm when being vacuumed
         if self.y < 4:
             self.y = 4
 
+        # Move the fly
         self.x += self.x_vel * 2
         self.y += self.y_vel * 2
 
