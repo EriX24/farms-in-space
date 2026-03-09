@@ -988,7 +988,7 @@ class Dispenser:
                         # Items that have a chance to be fabricated
                         for output_ in item_recipe["output"]:
                             for j in range(output_["weight"]):
-                                # TODO: Change this code to be better
+                                # Note: There isn't a possible improvment
                                 output_items.append(output_["items"])
 
                             # output_items.append(chance_output_items)
@@ -2087,12 +2087,6 @@ while True:
         if resized and paused:
             paused_text = Fonts.default_font.render("Paused", False, "#000000")
             centered_display.blit(paused_text, ((700 - paused_text.get_width() / 2) // 4 * 4, 160))
-
-            screen.blit(centered_display, ((screen.get_width() - 1400) / 2, (screen.get_height() - 800) / 2))
-            screen.blit(display, (0, 0))
-            screen.blit(overlay, (0, 0))
-
-            # TODO: There is arbitrary code here
 
     elif mode == "win":
         # Fill the screen
